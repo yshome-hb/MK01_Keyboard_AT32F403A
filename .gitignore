@@ -1,0 +1,12 @@
+.vscode
+MDK-ARM/app_obj
+MDK-ARM/app_lst
+MDK-ARM/ota_obj
+MDK-ARM/ota_lst
+MDK-ARM/*.uvoptx
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.scvd
+MDK-ARM/JLink*
+tools
+Output
+#App/handler/*
