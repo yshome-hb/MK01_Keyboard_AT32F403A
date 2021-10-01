@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_wwdg.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx WWDG header file
   **************************************************************************
   */
@@ -72,15 +72,15 @@ extern "C" {
 /** @defgroup WWDG_Exported_Functions
   * @{
   */
-
-void WWDG_Reset(void);
-void WWDG_SetPrescaler(uint32_t WWDG_Prescaler);
-void WWDG_SetWindowCounter(uint8_t WindowValue);
-void WWDG_EnableINT(void);
 void WWDG_SetCounter(uint8_t Counter);
 void WWDG_Enable(uint8_t Counter);
 FlagStatus WWDG_GetFlagStatus(void);
 void WWDG_ClearFlag(void);
+void WWDG_Reset(void);
+void WWDG_SetPrescaler(uint32_t WWDG_Prescaler);
+void WWDG_SetWindowCounter(uint8_t WindowValue);
+void WWDG_EnableINT(void);
+
 
 #ifdef __cplusplus
 }

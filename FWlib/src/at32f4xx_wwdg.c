@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_wwdg.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx WWDG source file
   **************************************************************************
   */
@@ -82,6 +82,38 @@
 /** @defgroup WWDG_Private_Functions
   * @{
   */
+/**
+  * @brief  Enables WWDG and load the counter value.
+  * @param  Counter: specifies the watchdog counter value.
+  *   This parameter must be a number between 0x40 and 0x7F.
+  * @retval None
+  */
+void WWDG_Enable(uint8_t Counter)
+{
+  /* Check the parameters */
+  assert_param(IS_WWDG_CNTR(Counter));
+  WWDG->CTRL = CTRL_EN_Set | Counter;
+}
+
+/**
+  * @brief  Checks whether the Early Wakeup interrupt flag is set or not.
+  * @param  None
+  * @retval The new state of the Early Wakeup interrupt flag (SET or RESET)
+  */
+FlagStatus WWDG_GetFlagStatus(void)
+{
+  return (FlagStatus)(WWDG->STS);
+}
+
+/**
+  * @brief  Clears Early Wakeup interrupt flag.
+  * @param  None
+  * @retval None
+  */
+void WWDG_ClearFlag(void)
+{
+  WWDG->STS = (uint32_t)RESET;
+}
 
 /**
   * @brief  Deinitializes the WWDG peripheral registers to their default reset values.
@@ -165,38 +197,7 @@ void WWDG_SetCounter(uint8_t Counter)
   WWDG->CTRL = Counter & BIT_Mask;
 }
 
-/**
-  * @brief  Enables WWDG and load the counter value.
-  * @param  Counter: specifies the watchdog counter value.
-  *   This parameter must be a number between 0x40 and 0x7F.
-  * @retval None
-  */
-void WWDG_Enable(uint8_t Counter)
-{
-  /* Check the parameters */
-  assert_param(IS_WWDG_CNTR(Counter));
-  WWDG->CTRL = CTRL_EN_Set | Counter;
-}
 
-/**
-  * @brief  Checks whether the Early Wakeup interrupt flag is set or not.
-  * @param  None
-  * @retval The new state of the Early Wakeup interrupt flag (SET or RESET)
-  */
-FlagStatus WWDG_GetFlagStatus(void)
-{
-  return (FlagStatus)(WWDG->STS);
-}
-
-/**
-  * @brief  Clears Early Wakeup interrupt flag.
-  * @param  None
-  * @retval None
-  */
-void WWDG_ClearFlag(void)
-{
-  WWDG->STS = (uint32_t)RESET;
-}
 
 /**
   * @}

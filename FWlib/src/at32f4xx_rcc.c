@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_rcc.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx RCC source file
   **************************************************************************
   */
@@ -285,8 +285,6 @@ void RCC_SetHSITweakValue(uint8_t HSITweakValue)
 void RCC_SetHSICalibValue(uint8_t HSICalibValue)
 {
   uint32_t tmpreg = 0;
-  /* Check the parameters */
-  assert_param(IS_RCC_CALIB_VALUE(HSICalibValue));
 
   /* Enable write HSICAL */
   *(__IO uint8_t *) MISC_BYTE0_HSICALKEY_ADDR = MISC_HSICAL_ENABLE_KEY;
@@ -630,7 +628,8 @@ void RCC_LSICmd(FunctionalState NewState)
   *   This parameter can be one of the following values:
   *     @arg RCC_ERTCCLKSelection_LSE: LSE selected as ERTC clock
   *     @arg RCC_ERTCCLKSelection_LSI: LSI selected as ERTC clock
-  *     @arg RCC_ERTCCLKSelection_HSE_Div128: HSE clock divided by 128 selected as ERTC clock
+  *     @arg RCC_ERTCCLKSelection_HSE_Div32: HSE clock divided by 32 selected as ERTC clock for AT32F421xx
+  *     @arg RCC_ERTCCLKSelection_HSE_Div128: HSE clock divided by 128 selected as ERTC clock for AT32F415xx
   * @retval None
   */
 void RCC_ERTCCLKConfig(uint32_t RCC_ERTCCLKSelect)

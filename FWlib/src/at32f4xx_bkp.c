@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_bkp.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx BKP source file
   **************************************************************************
   */
@@ -69,7 +69,7 @@
 
 /* RTCCR register bit mask */
 #define RTCCAL_CAL_MASK             ((uint16_t)0xFF80)
-#define RTCCAL_MASK                 ((uint16_t)0xFC7F)
+#define RTCCAL_MASK                 ((uint16_t)0xF07F)
 
 /**
   * @}
@@ -103,6 +103,106 @@
 /** @defgroup BKP_Private_Functions
   * @{
   */
+/**
+  * @brief  Checks whether the Tamper Pin Event flag is set or not.
+  * @param  None
+  * @retval The new state of the Tamper Pin Event flag (SET or RESET).
+  */
+FlagStatus BKP_GetFlagStatus(void)
+{
+  return (FlagStatus)(*(__IO uint32_t *) CTRLSTS_TPEF_BBMAP);
+}
+
+/**
+  * @brief  Clears Tamper Pin Event pending flag.
+  * @param  None
+  * @retval None
+  */
+void BKP_ClearFlag(void)
+{
+  /* Set CTE bit to clear Tamper Pin Event flag */
+  BKP->CTRLSTS |= BKP_CTRLSTS_CTPEF;
+}
+
+/**
+  * @brief  Checks whether the Tamper Pin Interrupt has occurred or not.
+  * @param  None
+  * @retval The new state of the Tamper Pin Interrupt (SET or RESET).
+  */
+ITStatus BKP_GetIntStatus(void)
+{
+  return (ITStatus)(*(__IO uint32_t *) CTRLSTS_TPIF_BBMAP);
+}
+
+/**
+  * @brief  Clears Tamper Pin Interrupt pending bit.
+  * @param  None
+  * @retval None
+  */
+void BKP_ClearIntPendingBit(void)
+{
+  /* Set CTI bit to clear Tamper Pin Interrupt pending bit */
+  BKP->CTRLSTS |= BKP_CTRLSTS_CTPIF;
+}
+
+/**
+  * @brief  Sets RTC Clock Calibration value.
+  * @param  CalibrationValue: specifies the RTC Clock Calibration value.
+  *   This parameter must be a number between 0 and 0x7F.
+  * @retval None
+  */
+void BKP_SetRTCCalValue(uint8_t CalibrationValue)
+{
+  uint16_t tmpreg = 0;
+  /* Check the parameters */
+  assert_param(IS_BKP_CAL_VAL(CalibrationValue));
+  tmpreg = BKP->RTCCAL;
+  /* Clear CAL[6:0] bits */
+  tmpreg &= RTCCAL_CAL_MASK;
+  /* Set CAL[6:0] bits according to CalibrationValue value */
+  tmpreg |= CalibrationValue;
+  /* Store the new value */
+  BKP->RTCCAL = tmpreg;
+}
+
+/**
+  * @brief  Writes user data to the specified Data Backup Register.
+  * @param  BKP_DR: specifies the Data Backup Register.
+  *   This parameter can be BKP_DRx where x:[1, 42]
+  * @param  Data: data to write
+  * @retval None
+  */
+void BKP_WriteBackupReg(uint16_t BKP_DR, uint16_t Data)
+{
+  __IO uint32_t tmp = 0;
+
+  /* Check the parameters */
+  assert_param(IS_BKP_DT(BKP_DR));
+
+  tmp = (uint32_t)BKP_BASE;
+  tmp += BKP_DR;
+
+  *(__IO uint32_t *) tmp = Data;
+}
+
+/**
+  * @brief  Reads data from the specified Data Backup Register.
+  * @param  BKP_DR: specifies the Data Backup Register.
+  *   This parameter can be BKP_DRx where x:[1, 42]
+  * @retval The content of the specified Data Backup Register
+  */
+uint16_t BKP_ReadBackupReg(uint16_t BKP_DR)
+{
+  __IO uint32_t tmp = 0;
+
+  /* Check the parameters */
+  assert_param(IS_BKP_DT(BKP_DR));
+
+  tmp = (uint32_t)BKP_BASE;
+  tmp += BKP_DR;
+
+  return (*(__IO uint16_t *) tmp);
+}
 
 /**
   * @brief  Deinitializes the BKP peripheral registers to their default reset values.
@@ -167,6 +267,11 @@ void BKP_IntConfig(FunctionalState NewState)
   *                                     the Tamper pin.
   *     @arg BKP_RTCOutput_Second: output the RTC Second pulse signal on
   *                                      the Tamper pin.
+  *     Note: The following two parameter apply only to AT32F403Axx or AT32F407xx
+  *     @arg BKP_RTCOutput_Alarm_Toggle: output the RTC Alarm toggle signal on
+  *                                     the Tamper pin.
+  *     @arg BKP_RTCOutput_Second_Toggle: output the RTC Second toggle signal on
+  *                                      the Tamper pin.
   * @retval None
   */
 void BKP_RTCOutputConfig(uint16_t BKP_RTCOutputSource)
@@ -182,107 +287,6 @@ void BKP_RTCOutputConfig(uint16_t BKP_RTCOutputSource)
   tmpreg |= BKP_RTCOutputSource;
   /* Store the new value */
   BKP->RTCCAL = tmpreg;
-}
-
-/**
-  * @brief  Sets RTC Clock Calibration value.
-  * @param  CalibrationValue: specifies the RTC Clock Calibration value.
-  *   This parameter must be a number between 0 and 0x7F.
-  * @retval None
-  */
-void BKP_SetRTCCalValue(uint8_t CalibrationValue)
-{
-  uint16_t tmpreg = 0;
-  /* Check the parameters */
-  assert_param(IS_BKP_CAL_VAL(CalibrationValue));
-  tmpreg = BKP->RTCCAL;
-  /* Clear CAL[6:0] bits */
-  tmpreg &= RTCCAL_CAL_MASK;
-  /* Set CAL[6:0] bits according to CalibrationValue value */
-  tmpreg |= CalibrationValue;
-  /* Store the new value */
-  BKP->RTCCAL = tmpreg;
-}
-
-/**
-  * @brief  Writes user data to the specified Data Backup Register.
-  * @param  BKP_DR: specifies the Data Backup Register.
-  *   This parameter can be BKP_DRx where x:[1, 42]
-  * @param  Data: data to write
-  * @retval None
-  */
-void BKP_WriteBackupReg(uint16_t BKP_DR, uint16_t Data)
-{
-  __IO uint32_t tmp = 0;
-
-  /* Check the parameters */
-  assert_param(IS_BKP_DT(BKP_DR));
-
-  tmp = (uint32_t)BKP_BASE;
-  tmp += BKP_DR;
-
-  *(__IO uint32_t *) tmp = Data;
-}
-
-/**
-  * @brief  Reads data from the specified Data Backup Register.
-  * @param  BKP_DR: specifies the Data Backup Register.
-  *   This parameter can be BKP_DRx where x:[1, 42]
-  * @retval The content of the specified Data Backup Register
-  */
-uint16_t BKP_ReadBackupReg(uint16_t BKP_DR)
-{
-  __IO uint32_t tmp = 0;
-
-  /* Check the parameters */
-  assert_param(IS_BKP_DT(BKP_DR));
-
-  tmp = (uint32_t)BKP_BASE;
-  tmp += BKP_DR;
-
-  return (*(__IO uint16_t *) tmp);
-}
-
-/**
-  * @brief  Checks whether the Tamper Pin Event flag is set or not.
-  * @param  None
-  * @retval The new state of the Tamper Pin Event flag (SET or RESET).
-  */
-FlagStatus BKP_GetFlagStatus(void)
-{
-  return (FlagStatus)(*(__IO uint32_t *) CTRLSTS_TPEF_BBMAP);
-}
-
-/**
-  * @brief  Clears Tamper Pin Event pending flag.
-  * @param  None
-  * @retval None
-  */
-void BKP_ClearFlag(void)
-{
-  /* Set CTE bit to clear Tamper Pin Event flag */
-  BKP->CTRLSTS |= BKP_CTRLSTS_CTPEF;
-}
-
-/**
-  * @brief  Checks whether the Tamper Pin Interrupt has occurred or not.
-  * @param  None
-  * @retval The new state of the Tamper Pin Interrupt (SET or RESET).
-  */
-ITStatus BKP_GetIntStatus(void)
-{
-  return (ITStatus)(*(__IO uint32_t *) CTRLSTS_TPIF_BBMAP);
-}
-
-/**
-  * @brief  Clears Tamper Pin Interrupt pending bit.
-  * @param  None
-  * @retval None
-  */
-void BKP_ClearIntPendingBit(void)
-{
-  /* Set CTI bit to clear Tamper Pin Interrupt pending bit */
-  BKP->CTRLSTS |= BKP_CTRLSTS_CTPIF;
 }
 
 /**

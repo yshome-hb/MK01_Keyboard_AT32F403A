@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_spi.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx SPI source file
   **************************************************************************
   */
@@ -98,115 +98,175 @@
 /** @defgroup SPI_Private_Functions
   * @{
   */
-
 /**
-  * @brief  Deinitializes the SPIx peripheral registers to their default
-  *         reset values (Affects also the I2Ss).
-  * @param  SPIx: where x can be 1, 2, 3 or 4 to select the SPI peripheral.
-  * @retval None
+  * @brief  Checks whether the specified SPI/I2S flag is set or not.
+  * @param  SPIx: where x can be
+  *   - 1, 2, 3, or 4 in SPI mode
+  *   - 2, 3, or 4 in I2S mode
+  * @param  SPI_I2S_FLAG: specifies the SPI/I2S flag to check.
+  *   This parameter can be one of the following values:
+  *     @arg SPI_I2S_FLAG_TE: Transmit buffer empty flag.
+  *     @arg SPI_I2S_FLAG_RNE: Receive buffer not empty flag.
+  *     @arg SPI_I2S_FLAG_BUSY: Busy flag.
+  *     @arg SPI_I2S_FLAG_OVR: Overrun flag.
+  *     @arg SPI_FLAG_MODF: Mode Fault flag.
+  *     @arg SPI_FLAG_CERR: CRC Error flag.
+  *     @arg I2S_FLAG_UDR: Underrun Error flag.
+  *     @arg I2S_FLAG_CS: Channel Side flag.
+  * @retval The new state of SPI_I2S_FLAG (SET or RESET).
   */
-void SPI_I2S_Reset(SPI_Type* SPIx)
+FlagStatus SPI_I2S_GetFlagStatus(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG)
 {
+  FlagStatus bitstatus = RESET;
   /* Check the parameters */
   assert_param(IS_SPI_ALL_PERIPH(SPIx));
+  assert_param(IS_SPI_I2S_GET_FLAG(SPI_I2S_FLAG));
 
-  if (SPIx == SPI1)
+  /* Check the status of the specified SPI/I2S flag */
+  if ((SPIx->STS & SPI_I2S_FLAG) != (uint16_t)RESET)
   {
-    /* Enable SPI1 reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_SPI1, ENABLE);
-    /* Release SPI1 from reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_SPI1, DISABLE);
-  }
-  else if (SPIx == SPI2)
-  {
-    /* Enable SPI2 reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI2, ENABLE);
-    /* Release SPI2 from reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI2, DISABLE);
-  }
-#if defined (AT32F403xx) || defined (AT32F403Axx) || \
-    defined (AT32F407xx)
-  else if (SPIx == SPI3)
-  {
-    /* Enable SPI3 reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI3, ENABLE);
-    /* Release SPI3 from reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI3, DISABLE);
-  }
-  else if (SPIx == SPI4)
-  {
-    /* Enable SPI4 reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI4, ENABLE);
-    /* Release SPI4 from reset state */
-    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI4, DISABLE);
-  }
-#endif
-}
-
-/**
-  * @brief  Initializes the SPIx peripheral according to the specified
-  *         parameters in the SPI_InitStruct.
-  * @param  SPIx: where x can be 1, 2, 3 or 4 to select the SPI peripheral.
-  * @param  SPI_InitStruct: pointer to a SPI_InitType structure that
-  *         contains the configuration information for the specified SPI peripheral.
-  * @retval None
-  */
-void SPI_Init(SPI_Type* SPIx, SPI_InitType* SPI_InitStruct)
-{
-  uint16_t tmpreg = 0;
-
-  /* check the parameters */
-  assert_param(IS_SPI_ALL_PERIPH(SPIx));
-
-  /* Check the SPI parameters */
-  assert_param(IS_SPI_TRANS_MODE(SPI_InitStruct->SPI_TransMode));
-  assert_param(IS_SPI_MODE(SPI_InitStruct->SPI_Mode));
-  assert_param(IS_SPI_FRAMESIZE(SPI_InitStruct->SPI_FrameSize));
-  assert_param(IS_SPI_CPOL(SPI_InitStruct->SPI_CPOL));
-  assert_param(IS_SPI_CPHA(SPI_InitStruct->SPI_CPHA));
-  assert_param(IS_SPI_NSSSEL(SPI_InitStruct->SPI_NSSSEL));
-  assert_param(IS_SPI_MCLKP(SPI_InitStruct->SPI_MCLKP));
-  assert_param(IS_SPI_FIRST_BIT(SPI_InitStruct->SPI_FirstBit));
-  assert_param(IS_SPI_CPOLY(SPI_InitStruct->SPI_CPOLY));
-
-  /*---------------------------- SPIx CTRL1 Configuration ------------------------*/
-  /* Get the SPIx CTRL1 value */
-  tmpreg = SPIx->CTRL1;
-  /* Clear BIDIMode, BIDIOE, RxONLY, SSM, SSI, LSBFirst, BR, MSTR, CPOL and CPHA bits */
-  tmpreg &= CTRL1_CLEAR_MASK;
-  /* Configure SPIx: direction, NSS management, first transmitted bit, BaudRate prescaler
-     master/salve mode, CPOL and CPHA */
-  /* Set BIDImode, BIDIOE and RxONLY bits according to SPI_Direction value */
-  /* Set SSM, SSI and MSTR bits according to SPI_Mode and SPI_NSS values */
-  /* Set LSBFirst bit according to SPI_FirstBit value */
-  /* Set BR bits according to SPI_BaudRatePrescaler value */
-  /* Set CPOL bit according to SPI_CPOL value */
-  /* Set CPHA bit according to SPI_CPHA value */
-
-  if (SPI_InitStruct->SPI_MCLKP & SPI_MCLKP_OVER_256)
-  {
-    /* MCLKP is over 256 */
-    SPIx->CTRL2 |= SPI_CTRL2_MCLKP_3;
+    /* SPI_I2S_FLAG is set */
+    bitstatus = SET;
   }
   else
   {
-    SPIx->CTRL2 &= ~SPI_CTRL2_MCLKP_3;
+    /* SPI_I2S_FLAG is reset */
+    bitstatus = RESET;
   }
 
-  tmpreg |= (uint16_t)((uint32_t)SPI_InitStruct->SPI_TransMode | SPI_InitStruct->SPI_Mode |
-                       SPI_InitStruct->SPI_FrameSize | SPI_InitStruct->SPI_CPOL |
-                       SPI_InitStruct->SPI_CPHA | SPI_InitStruct->SPI_NSSSEL |
-                       (SPI_InitStruct->SPI_MCLKP & 0x7FFF) | SPI_InitStruct->SPI_FirstBit);
-  /* Write to SPIx CTRL1 */
-  SPIx->CTRL1 = tmpreg;
+  /* Return the SPI_I2S_FLAG status */
+  return  bitstatus;
+}
 
+/**
+  * @brief  Clears the SPIx  CRC Error(SPI_FLAG_CERR) flag.
+  * @param  SPIx: where x can be
+  *   - 1, 2, 3, or 4 in SPI mode
+  * @param  SPI_I2S_FLAG: specifies the SPI flag to clear.
+  *   This function clears only CERR flag.This parameter can be as following values:
+  *     @arg SPI_INT_CERR: CRC error interrupt pending bit.
+  * @note
+  *   - SPI_I2S_FLAG_RNE 
+  *     RNE flag is cleared by a read operation to SPI_DT register(SPI_I2S_RxData()).
+  *   - SPI_I2S_FLAG_TE 
+  *     TE flag is cleared by a write operation to SPI_DT register (SPI_I2S_TxData()).
+  *   - I2S_FLAG_CS 
+  *     CS flag is readonly flag,cannot cleared by software.
+  *   - I2S_FLAG_UDR 
+  *     UDR flag is cleared by a read operation to SPI_STS register (SPI_I2S_GetFlagStatus()).
+  *   - SPI_FLAG_CERR
+  *     CERR flag is cleared by software write 0 operation to
+  *     SPI_STS register (SPI_I2S_ClearINTPendingBit()).
+  *   - SPI_FLAG_MODF
+  *     MODF flag is cleared by software sequence:
+  *     a read/write operation to SPI_STS register (SPI_I2S_GetFlagStatus() or SPI_I2S_ClearFlag())
+  *     followed by a write operation to SPI_CTRL1 register (SPI_Enable()).
+  *   - SPI_I2S_FLAG_OVR
+  *     OVR flag is cleared by software sequence:
+  *     a read operation to SPI_DT register (SPI_I2S_RxData())
+  *     followed by a read operation to SPI_STS register (SPI_I2S_GetFlagStatus()).
+  *   - SPI_I2S_FLAG_BUSY
+  *     BUSY flag is readonly flag,cannot cleared by software.
+  * @retval None
+  */
+void SPI_I2S_ClearFlag(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG)
+{
+  /* Check the parameters */
+  assert_param(IS_SPI_ALL_PERIPH(SPIx));
+  assert_param(IS_SPI_I2S_CLEAR_FLAG(SPI_I2S_FLAG));
 
-  /* Activate the SPI mode (Reset I2SMOD bit in I2SCFGR register) */
-  SPIx->I2SCTRL &= SPI_MODE_SEL;
+  /* Clear the selected SPI CRC Error (CRCERR) flag */
+  SPIx->STS = (uint16_t)~SPI_I2S_FLAG;
+}
 
-  /*---------------------------- SPIx CRCPOLY Configuration --------------------*/
-  /* Write to SPIx CRCPOLY */
-  SPIx->CPOLY = SPI_InitStruct->SPI_CPOLY;
+/**
+  * @brief  Checks whether the specified SPI/I2S interrupt has occurred or not.
+  * @param  SPIx: where x can be
+  *   - 1, 2, 3, or 4 in SPI mode
+  *   - 2, 3, or 4 in I2S mode
+  * @param  SPI_I2S_INT: specifies the SPI/I2S interrupt source to check.
+  *   This parameter can be one of the following values:
+  *     @arg SPI_I2S_INT_TE: Transmit buffer empty interrupt.
+  *     @arg SPI_I2S_INT_RNE: Receive buffer not empty interrupt.
+  *     @arg SPI_I2S_INT_OVR: Overrun interrupt.
+  *     @arg SPI_INT_MODF: Mode Fault interrupt.
+  *     @arg SPI_INT_CERR: CRC Error interrupt.
+  *     @arg I2S_INT_UDR: Underrun Error interrupt.
+  * @retval The new state of SPI_I2S_INT (SET or RESET).
+  */
+ITStatus SPI_I2S_GetITStatus(SPI_Type* SPIx, uint8_t SPI_I2S_INT)
+{
+  ITStatus bitstatus = RESET;
+  uint16_t itpos = 0, itmask = 0, enablestatus = 0;
+
+  /* Check the parameters */
+  assert_param(IS_SPI_ALL_PERIPH(SPIx));
+  assert_param(IS_SPI_I2S_GET_INT(SPI_I2S_INT));
+
+  /* Get the SPI/I2S INT index */
+  itpos = 0x01 << (SPI_I2S_INT & 0x0F);
+
+  /* Get the SPI/I2S INT mask */
+  itmask = SPI_I2S_INT >> 4;
+
+  /* Set the INT mask */
+  itmask = 0x01 << itmask;
+
+  /* Get the SPI_I2S_INT enable bit status */
+  enablestatus = (SPIx->CTRL2 & itmask) ;
+
+  /* Check the status of the specified SPI/I2S interrupt */
+  if (((SPIx->STS & itpos) != (uint16_t)RESET) && enablestatus)
+  {
+    /* SPI_I2S_INT is set */
+    bitstatus = SET;
+  }
+  else
+  {
+    /* SPI_I2S_INT is reset */
+    bitstatus = RESET;
+  }
+
+  /* Return the SPI_I2S_INT status */
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the SPIx  CRC Error(SPI_INT_CERR) interrupt pending bit.
+  * @param  SPIx: where x can be
+  *   - 1, 2, 3, or 4 in SPI mode
+  * @param  SPI_I2S_INT: specifies the SPI interrupt pending bit to clear.
+  *   This function clears only CERR(SPI_INT_CERR) interrupt pending bit.This 
+  *   parameter can be as following values:
+  *     @arg SPI_INT_CERR: CRC error interrupt pending bit.
+  * @note
+  *   - SPI_INT_CERR
+  *     CERR interrupt pending bit is cleared by software write 0 operation to
+  *     SPI_STS register (SPI_I2S_ClearINTPendingBit()).
+  *   - SPI_I2S_INT_OVR
+  *     OVR interrupt pending bit is cleared by software sequence:
+  *     a read operation to SPI_DT register (SPI_I2S_RxData())
+  *     followed by a read operation to SPI_STS register (SPI_I2S_GetITStatus()).
+  *   - SPI_INT_MODF
+  *     MODF interrupt pending bit is cleared by software sequence:
+  *     a read/write operation to SPI_STS register (SPI_I2S_GetITStatus() or SPI_I2S_ClearINTPendingBit())
+  *     followed by a write operation to SPI_CTRL1 register (SPI_Enable()).
+  *   - I2S_INT_UDR
+  *     UDR interrupt pending bit is cleared by a read operation to SPI_STS register (SPI_I2S_GetITStatus()).
+  * @retval None
+  */
+void SPI_I2S_ClearINTPendingBit(SPI_Type* SPIx, uint8_t SPI_I2S_INT)
+{
+  uint16_t itpos = 0;
+  /* Check the parameters */
+  assert_param(IS_SPI_ALL_PERIPH(SPIx));
+  assert_param(IS_SPI_I2S_CLEAR_INT(SPI_I2S_INT));
+
+  /* Get the SPI INT index */
+  itpos = 0x01 << (SPI_I2S_INT & 0x0F);
+
+  /* Clear the selected SPI CRC Error (CRCERR) interrupt pending bit */
+  SPIx->STS = (uint16_t)~itpos;
 }
 
 /**
@@ -289,16 +349,33 @@ void I2S_Init(SPI_Type* SPIx, I2S_InitType* I2S_InitStruct)
     sourceclock = RCC_Clocks.SYSCLK_Freq;
 
     /* Compute the Real divider depending on the MCLK output state with a floating point */
-    if(I2S_InitStruct->I2S_MCLKOE == I2S_MCLKOE_ENABLE)
+    if((I2S_InitStruct->I2s_AudioProtocol == I2S_AUDIOPROTOCOL_PCMLONG) || (I2S_InitStruct->I2s_AudioProtocol == I2S_AUDIOPROTOCOL_PCMSHORT))
     {
-      /* MCLK output is enabled */
-      tmp = (uint16_t)(((((sourceclock / 256) * 10) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      if(I2S_InitStruct->I2S_MCLKOE == I2S_MCLKOE_ENABLE)
+      {
+        /* MCLK output is enabled */
+        tmp = (uint16_t)(((((sourceclock / 128) * 10) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      }
+      else
+      {
+        /* MCLK output is disabled */
+        tmp = (uint16_t)(((((sourceclock / (16 * packetlength)) * 10 ) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      }
     }
     else
     {
-      /* MCLK output is disabled */
-      tmp = (uint16_t)(((((sourceclock / (32 * packetlength)) * 10 ) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      if(I2S_InitStruct->I2S_MCLKOE == I2S_MCLKOE_ENABLE)
+      {
+        /* MCLK output is enabled */
+        tmp = (uint16_t)(((((sourceclock / 256) * 10) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      }
+      else
+      {
+        /* MCLK output is disabled */
+        tmp = (uint16_t)(((((sourceclock / (32 * packetlength)) * 10 ) / I2S_InitStruct->I2S_AudioFreq)) + 5);
+      }
     }
+    
 
     /* Remove the floating point */
     tmp = tmp / 10;
@@ -733,154 +810,113 @@ void SPI_HalfDuplexTransModeConfig(SPI_Type* SPIx, uint16_t SPI_Direction)
 }
 
 /**
-  * @brief  Checks whether the specified SPI/I2S flag is set or not.
-  * @param  SPIx: where x can be
-  *   - 1, 2, 3, or 4 in SPI mode
-  *   - 2, 3, or 4 in I2S mode
-  * @param  SPI_I2S_FLAG: specifies the SPI/I2S flag to check.
-  *   This parameter can be one of the following values:
-  *     @arg SPI_I2S_FLAG_TE: Transmit buffer empty flag.
-  *     @arg SPI_I2S_FLAG_RNE: Receive buffer not empty flag.
-  *     @arg SPI_I2S_FLAG_BUSY: Busy flag.
-  *     @arg SPI_I2S_FLAG_OVR: Overrun flag.
-  *     @arg SPI_FLAG_MODF: Mode Fault flag.
-  *     @arg SPI_FLAG_CERR: CRC Error flag.
-  *     @arg I2S_FLAG_UDR: Underrun Error flag.
-  *     @arg I2S_FLAG_CS: Channel Side flag.
-  * @retval The new state of SPI_I2S_FLAG (SET or RESET).
+  * @brief  Deinitializes the SPIx peripheral registers to their default
+  *         reset values (Affects also the I2Ss).
+  * @param  SPIx: where x can be 1, 2, 3 or 4 to select the SPI peripheral.
+  * @retval None
   */
-FlagStatus SPI_I2S_GetFlagStatus(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG)
+void SPI_I2S_Reset(SPI_Type* SPIx)
 {
-  FlagStatus bitstatus = RESET;
   /* Check the parameters */
   assert_param(IS_SPI_ALL_PERIPH(SPIx));
-  assert_param(IS_SPI_I2S_GET_FLAG(SPI_I2S_FLAG));
 
-  /* Check the status of the specified SPI/I2S flag */
-  if ((SPIx->STS & SPI_I2S_FLAG) != (uint16_t)RESET)
+  if (SPIx == SPI1)
   {
-    /* SPI_I2S_FLAG is set */
-    bitstatus = SET;
+    /* Enable SPI1 reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_SPI1, ENABLE);
+    /* Release SPI1 from reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_SPI1, DISABLE);
+  }
+  else if (SPIx == SPI2)
+  {
+    /* Enable SPI2 reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI2, ENABLE);
+    /* Release SPI2 from reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI2, DISABLE);
+  }
+#if defined (AT32F403xx) || defined (AT32F403Axx) || \
+    defined (AT32F407xx)
+  else if (SPIx == SPI3)
+  {
+    /* Enable SPI3 reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI3, ENABLE);
+    /* Release SPI3 from reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI3, DISABLE);
+  }
+  else if (SPIx == SPI4)
+  {
+    /* Enable SPI4 reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI4, ENABLE);
+    /* Release SPI4 from reset state */
+    RCC_APB1PeriphResetCmd(RCC_APB1PERIPH_SPI4, DISABLE);
+  }
+#endif
+}
+
+/**
+  * @brief  Initializes the SPIx peripheral according to the specified
+  *         parameters in the SPI_InitStruct.
+  * @param  SPIx: where x can be 1, 2, 3 or 4 to select the SPI peripheral.
+  * @param  SPI_InitStruct: pointer to a SPI_InitType structure that
+  *         contains the configuration information for the specified SPI peripheral.
+  * @retval None
+  */
+void SPI_Init(SPI_Type* SPIx, SPI_InitType* SPI_InitStruct)
+{
+  uint16_t tmpreg = 0;
+
+  /* check the parameters */
+  assert_param(IS_SPI_ALL_PERIPH(SPIx));
+
+  /* Check the SPI parameters */
+  assert_param(IS_SPI_TRANS_MODE(SPI_InitStruct->SPI_TransMode));
+  assert_param(IS_SPI_MODE(SPI_InitStruct->SPI_Mode));
+  assert_param(IS_SPI_FRAMESIZE(SPI_InitStruct->SPI_FrameSize));
+  assert_param(IS_SPI_CPOL(SPI_InitStruct->SPI_CPOL));
+  assert_param(IS_SPI_CPHA(SPI_InitStruct->SPI_CPHA));
+  assert_param(IS_SPI_NSSSEL(SPI_InitStruct->SPI_NSSSEL));
+  assert_param(IS_SPI_MCLKP(SPI_InitStruct->SPI_MCLKP));
+  assert_param(IS_SPI_FIRST_BIT(SPI_InitStruct->SPI_FirstBit));
+  assert_param(IS_SPI_CPOLY(SPI_InitStruct->SPI_CPOLY));
+
+  /*---------------------------- SPIx CTRL1 Configuration ------------------------*/
+  /* Get the SPIx CTRL1 value */
+  tmpreg = SPIx->CTRL1;
+  /* Clear BIDIMode, BIDIOE, RxONLY, SSM, SSI, LSBFirst, BR, MSTR, CPOL and CPHA bits */
+  tmpreg &= CTRL1_CLEAR_MASK;
+  /* Configure SPIx: direction, NSS management, first transmitted bit, BaudRate prescaler
+     master/salve mode, CPOL and CPHA */
+  /* Set BIDImode, BIDIOE and RxONLY bits according to SPI_Direction value */
+  /* Set SSM, SSI and MSTR bits according to SPI_Mode and SPI_NSS values */
+  /* Set LSBFirst bit according to SPI_FirstBit value */
+  /* Set BR bits according to SPI_BaudRatePrescaler value */
+  /* Set CPOL bit according to SPI_CPOL value */
+  /* Set CPHA bit according to SPI_CPHA value */
+
+  if (SPI_InitStruct->SPI_MCLKP & SPI_MCLKP_OVER_256)
+  {
+    /* MCLKP is over 256 */
+    SPIx->CTRL2 |= SPI_CTRL2_MCLKP_3;
   }
   else
   {
-    /* SPI_I2S_FLAG is reset */
-    bitstatus = RESET;
+    SPIx->CTRL2 &= ~SPI_CTRL2_MCLKP_3;
   }
 
-  /* Return the SPI_I2S_FLAG status */
-  return  bitstatus;
-}
+  tmpreg |= (uint16_t)((uint32_t)SPI_InitStruct->SPI_TransMode | SPI_InitStruct->SPI_Mode |
+                       SPI_InitStruct->SPI_FrameSize | SPI_InitStruct->SPI_CPOL |
+                       SPI_InitStruct->SPI_CPHA | SPI_InitStruct->SPI_NSSSEL |
+                       (SPI_InitStruct->SPI_MCLKP & 0x7FFF) | SPI_InitStruct->SPI_FirstBit);
+  /* Write to SPIx CTRL1 */
+  SPIx->CTRL1 = tmpreg;
 
-/**
-  * @brief  Clears the SPIx CRC Error (CRCERR) flag.
-  * @param  SPIx: where x can be
-  *   - 1, 2, 3, or 4 in SPI mode
-  * @param  SPI_I2S_FLAG: specifies the SPI flag to clear.
-  *   This function clears only CRCERR flag.
-  * @note
-  *   - OVR (OverRun error) flag is cleared by software sequence: a read
-  *     operation to SPI_DT register (SPI_I2S_RxData()) followed by a read
-  *     operation to SPI_STS register (SPI_I2S_GetFlagStatus()).
-  *   - UDR (UnderRun error) flag is cleared by a read operation to
-  *     SPI_STS register (SPI_I2S_GetFlagStatus()).
-  *   - MODF (Mode Fault) flag is cleared by software sequence: a read/write
-  *     operation to SPI_STS register (SPI_I2S_GetFlagStatus()) followed by a
-  *     write operation to SPI_CTRL1 register (SPI_Enable() to enable the SPI).
-  * @retval None
-  */
-void SPI_I2S_ClearFlag(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG)
-{
-  /* Check the parameters */
-  assert_param(IS_SPI_ALL_PERIPH(SPIx));
-  assert_param(IS_SPI_I2S_CLEAR_FLAG(SPI_I2S_FLAG));
 
-  /* Clear the selected SPI CRC Error (CRCERR) flag */
-  SPIx->STS = (uint16_t)~SPI_I2S_FLAG;
-}
+  /* Activate the SPI mode (Reset I2SMOD bit in I2SCFGR register) */
+  SPIx->I2SCTRL &= SPI_MODE_SEL;
 
-/**
-  * @brief  Checks whether the specified SPI/I2S interrupt has occurred or not.
-  * @param  SPIx: where x can be
-  *   - 1, 2, 3, or 4 in SPI mode
-  *   - 2, 3, or 4 in I2S mode
-  * @param  SPI_I2S_INT: specifies the SPI/I2S interrupt source to check.
-  *   This parameter can be one of the following values:
-  *     @arg SPI_I2S_INT_TE: Transmit buffer empty interrupt.
-  *     @arg SPI_I2S_INT_RNE: Receive buffer not empty interrupt.
-  *     @arg SPI_I2S_INT_OVR: Overrun interrupt.
-  *     @arg SPI_INT_MODF: Mode Fault interrupt.
-  *     @arg SPI_INT_CERR: CRC Error interrupt.
-  *     @arg I2S_INT_UDR: Underrun Error interrupt.
-  * @retval The new state of SPI_I2S_INT (SET or RESET).
-  */
-ITStatus SPI_I2S_GetITStatus(SPI_Type* SPIx, uint8_t SPI_I2S_INT)
-{
-  ITStatus bitstatus = RESET;
-  uint16_t itpos = 0, itmask = 0, enablestatus = 0;
-
-  /* Check the parameters */
-  assert_param(IS_SPI_ALL_PERIPH(SPIx));
-  assert_param(IS_SPI_I2S_GET_INT(SPI_I2S_INT));
-
-  /* Get the SPI/I2S INT index */
-  itpos = 0x01 << (SPI_I2S_INT & 0x0F);
-
-  /* Get the SPI/I2S INT mask */
-  itmask = SPI_I2S_INT >> 4;
-
-  /* Set the INT mask */
-  itmask = 0x01 << itmask;
-
-  /* Get the SPI_I2S_INT enable bit status */
-  enablestatus = (SPIx->CTRL2 & itmask) ;
-
-  /* Check the status of the specified SPI/I2S interrupt */
-  if (((SPIx->STS & itpos) != (uint16_t)RESET) && enablestatus)
-  {
-    /* SPI_I2S_INT is set */
-    bitstatus = SET;
-  }
-  else
-  {
-    /* SPI_I2S_INT is reset */
-    bitstatus = RESET;
-  }
-
-  /* Return the SPI_I2S_INT status */
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the SPIx CRC Error (CRCERR) interrupt pending bit.
-  * @param  SPIx: where x can be
-  *   - 1, 2, 3, or 4 in SPI mode
-  * @param  SPI_I2S_INT: specifies the SPI interrupt pending bit to clear.
-  *   This function clears only CRCERR interrupt pending bit.
-  * @note
-  *   - OVR (OverRun Error) interrupt pending bit is cleared by software
-  *     sequence: a read operation to SPI_DT register (SPI_I2S_RxData())
-  *     followed by a read operation to SPI_STS register (SPI_I2S_GetITStatus()).
-  *   - UDR (UnderRun Error) interrupt pending bit is cleared by a read
-  *     operation to SPI_STS register (SPI_I2S_GetITStatus()).
-  *   - MODF (Mode Fault) interrupt pending bit is cleared by software sequence:
-  *     a read/write operation to SPI_STS register (SPI_I2S_GetITStatus())
-  *     followed by a write operation to SPI_CTRL1 register (SPI_Enable() to enable
-  *     the SPI).
-  * @retval None
-  */
-void SPI_I2S_ClearINTPendingBit(SPI_Type* SPIx, uint8_t SPI_I2S_INT)
-{
-  uint16_t itpos = 0;
-  /* Check the parameters */
-  assert_param(IS_SPI_ALL_PERIPH(SPIx));
-  assert_param(IS_SPI_I2S_CLEAR_INT(SPI_I2S_INT));
-
-  /* Get the SPI INT index */
-  itpos = 0x01 << (SPI_I2S_INT & 0x0F);
-
-  /* Clear the selected SPI CRC Error (CRCERR) interrupt pending bit */
-  SPIx->STS = (uint16_t)~itpos;
+  /*---------------------------- SPIx CRCPOLY Configuration --------------------*/
+  /* Write to SPIx CRCPOLY */
+  SPIx->CPOLY = SPI_InitStruct->SPI_CPOLY;
 }
 /**
   * @}

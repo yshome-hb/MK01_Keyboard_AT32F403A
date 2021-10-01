@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_pwr.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx PWR source file
   **************************************************************************
   */
@@ -80,7 +80,6 @@
 #endif
 #define CTRL_PVDS_MASK              ((uint32_t)0x000000E0)
 
-
 /**
   * @}
   */
@@ -112,6 +111,49 @@
 /** @defgroup PWR_Private_Functions
   * @{
   */
+/**
+  * @brief  Checks whether the specified PWR flag is set or not.
+  * @param  PWR_FLAG: specifies the flag to check.
+  *   This parameter can be one of the following values:
+  *     @arg PWR_FLAG_WUF: Wake Up flag
+  *     @arg PWR_FLAG_SBF: StandBy flag
+  *     @arg PWR_FLAG_PVDO: PVD Output
+  * @retval The new state of PWR_FLAG (SET or RESET).
+  */
+FlagStatus PWR_GetFlagStatus(uint32_t PWR_FLAG)
+{
+  FlagStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_PWR_GET_FLAG(PWR_FLAG));
+
+  if ((PWR->CTRLSTS & PWR_FLAG) != (uint32_t)RESET)
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  /* Return the flag status */
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the PWR's pending flags.
+  * @param  PWR_FLAG: specifies the flag to clear.
+  *   This parameter can be one of the following values:
+  *     @arg PWR_FLAG_WUF: Wake Up flag
+  *     @arg PWR_FLAG_SBF: StandBy flag
+  * @retval None
+  */
+void PWR_ClearFlag(uint32_t PWR_FLAG)
+{
+  /* Check the parameters */
+  assert_param(IS_PWR_CLEAR_FLAG(PWR_FLAG));
+
+  PWR->CTRL |=  PWR_FLAG << 2;
+}
 
 /**
   * @brief  Deinitializes the PWR peripheral registers to their default reset values.
@@ -311,6 +353,7 @@ void PWR_EnterSTOPMode(uint8_t PWR_STOPEntry)
   * @param  PWR_Regulator: specifies the regulator state in STOP mode.
   *   This parameter can be one of the following values:
   *     @arg PWR_Regulator_ON: STOP mode with regulator ON
+  *     @arg PWR_Regulator_LowPower: STOP mode with regulator LowPower
   * @param  PWR_STOPEntry: specifies if STOP mode in entered with WFI or WFE instruction.
   *   This parameter can be one of the following values:
   *     @arg PWR_STOPEntry_WFI: enter STOP mode with WFI instruction
@@ -323,7 +366,7 @@ void PWR_EnterSTOPMode(uint32_t PWR_Regulator, uint8_t PWR_STOPEntry)
   /* Check the parameters */
   assert_param(IS_PWR_REGULATOR(PWR_Regulator));
   assert_param(IS_PWR_STOP_ENTRY(PWR_STOPEntry));
-
+  
 #if defined (AT32F421xx)
   PWR->CTRL2 &= ~CTRL2_LPDS1_MASK;
   tmpreg = PWR_Regulator & CTRL2_LPDS1_MASK;
@@ -380,49 +423,7 @@ void PWR_EnterSTANDBYMode(void)
   __WFI();
 }
 
-/**
-  * @brief  Checks whether the specified PWR flag is set or not.
-  * @param  PWR_FLAG: specifies the flag to check.
-  *   This parameter can be one of the following values:
-  *     @arg PWR_FLAG_WUF: Wake Up flag
-  *     @arg PWR_FLAG_SBF: StandBy flag
-  *     @arg PWR_FLAG_PVDO: PVD Output
-  * @retval The new state of PWR_FLAG (SET or RESET).
-  */
-FlagStatus PWR_GetFlagStatus(uint32_t PWR_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_PWR_GET_FLAG(PWR_FLAG));
 
-  if ((PWR->CTRLSTS & PWR_FLAG) != (uint32_t)RESET)
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  /* Return the flag status */
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the PWR's pending flags.
-  * @param  PWR_FLAG: specifies the flag to clear.
-  *   This parameter can be one of the following values:
-  *     @arg PWR_FLAG_WUF: Wake Up flag
-  *     @arg PWR_FLAG_SBF: StandBy flag
-  * @retval None
-  */
-void PWR_ClearFlag(uint32_t PWR_FLAG)
-{
-  /* Check the parameters */
-  assert_param(IS_PWR_CLEAR_FLAG(PWR_FLAG));
-
-  PWR->CTRL |=  PWR_FLAG << 2;
-}
 
 /**
   * @}

@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_usart.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx USART header file
   **************************************************************************
   */
@@ -351,7 +351,6 @@ typedef struct
                                                      ((*(uint32_t*)&(PERIPH)) != UART7_BASE) &&\
                                                      ((*(uint32_t*)&(PERIPH)) != UART8_BASE)) \
                                                      || ((USART_FLAG) != USART_FLAG_CTSF))
-#define IS_USART_BAUDRATE(BAUDRATE)         (((BAUDRATE) > 0) && ((BAUDRATE) < 0x0044AA21))
 #define IS_USART_ADDRESS(ADDRESS)           ((ADDRESS) <= 0xF)
 #define IS_USART_DATA(DATA)                 ((DATA) <= 0x1FF)
 
@@ -374,22 +373,6 @@ typedef struct
 /** @defgroup USART_Exported_Functions
   * @{
   */
-
-void USART_Reset(USART_Type* USARTx);
-void USART_Init(USART_Type* USARTx, USART_InitType* USART_InitStruct);
-void USART_StructInit(USART_InitType* USART_InitStruct);
-void USART_ClockInit(USART_Type* USARTx, USART_ClockInitType* USART_ClockInitStruct);
-void USART_ClockStructInit(USART_ClockInitType* USART_ClockInitStruct);
-void USART_Cmd(USART_Type* USARTx, FunctionalState NewState);
-void USART_INTConfig(USART_Type* USARTx, uint16_t USART_INT, FunctionalState NewState);
-void USART_DMACmd(USART_Type* USARTx, uint16_t USART_DMAReq, FunctionalState NewState);
-void USART_SetAddress(USART_Type* USARTx, uint8_t USART_Address);
-void USART_WakeUpConfig(USART_Type* USARTx, uint16_t USART_WakeUp);
-void USART_ReceiverWakeUpCmd(USART_Type* USARTx, FunctionalState NewState);
-void USART_LINBreakDetectLengthConfig(USART_Type* USARTx, uint16_t USART_LINBreakDetectLength);
-void USART_LINCmd(USART_Type* USARTx, FunctionalState NewState);
-void USART_SendData(USART_Type* USARTx, uint16_t Data);
-uint16_t USART_ReceiveData(USART_Type* USARTx);
 void USART_SendBreak(USART_Type* USARTx);
 void USART_SetGuardTime(USART_Type* USARTx, uint8_t USART_GuardTime);
 void USART_SetPrescaler(USART_Type* USARTx, uint8_t USART_Prescaler);
@@ -399,12 +382,28 @@ void USART_HalfDuplexCmd(USART_Type* USARTx, FunctionalState NewState);
 void USART_IrDAConfig(USART_Type* USARTx, uint16_t USART_IrDAMode);
 void USART_IrDACmd(USART_Type* USARTx, FunctionalState NewState);
 FlagStatus USART_GetFlagStatus(USART_Type* USARTx, uint16_t USART_FLAG);
+void USART_Reset(USART_Type* USARTx);
+void USART_Init(USART_Type* USARTx, USART_InitType* USART_InitStruct);
+void USART_StructInit(USART_InitType* USART_InitStruct);
+void USART_ClockInit(USART_Type* USARTx, USART_ClockInitType* USART_ClockInitStruct);
+void USART_ReceiverWakeUpCmd(USART_Type* USARTx, FunctionalState NewState);
+void USART_LINBreakDetectLengthConfig(USART_Type* USARTx, uint16_t USART_LINBreakDetectLength);
+void USART_LINCmd(USART_Type* USARTx, FunctionalState NewState);
+void USART_SendData(USART_Type* USARTx, uint16_t Data);
+uint16_t USART_ReceiveData(USART_Type* USARTx);
 void USART_ClearFlag(USART_Type* USARTx, uint16_t USART_FLAG);
 ITStatus USART_GetITStatus(USART_Type* USARTx, uint16_t USART_INT);
 void USART_ClearITPendingBit(USART_Type* USARTx, uint16_t USART_INT);
 #if defined (AT32F421xx)
 void USART_SWAP(USART_Type* USARTx, FunctionalState NewState);
 #endif
+void USART_ClockStructInit(USART_ClockInitType* USART_ClockInitStruct);
+void USART_Cmd(USART_Type* USARTx, FunctionalState NewState);
+void USART_INTConfig(USART_Type* USARTx, uint16_t USART_INT, FunctionalState NewState);
+void USART_DMACmd(USART_Type* USARTx, uint16_t USART_DMAReq, FunctionalState NewState);
+void USART_SetAddress(USART_Type* USARTx, uint8_t USART_Address);
+void USART_WakeUpConfig(USART_Type* USARTx, uint16_t USART_WakeUp);
+
 #ifdef __cplusplus
 }
 #endif

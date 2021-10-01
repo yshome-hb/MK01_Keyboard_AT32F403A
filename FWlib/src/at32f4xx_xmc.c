@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_xmc.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx XMC source file
   **************************************************************************
   */
@@ -80,81 +80,329 @@
   */
 
 /**
-  * @brief  Deinitializes the XMC NOR/SRAM Banks registers to their default
-  *         reset values.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank1_NORSRAM1: XMC Bank1 NOR/SRAM1
-  *     @arg XMC_Bank1_NORSRAM2: XMC Bank1 NOR/SRAM2
-  *     @arg XMC_Bank1_NORSRAM3: XMC Bank1 NOR/SRAM3
-  *     @arg XMC_Bank1_NORSRAM4: XMC Bank1 NOR/SRAM4
+  * @brief  Enables or disables the PCCARD Memory Bank.
+  * @param  NewState: new state of the PCCARD Memory Bank.
+  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void XMC_NORSRAMReset(uint32_t XMC_Bank)
+void XMC_PCCARDCmd(FunctionalState NewState)
 {
-  /* Check the parameter */
-  assert_param(IS_XMC_NORSRAM_REGION(XMC_Bank));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-  /* XMC_Bank1_NORSRAM1 */
-  if(XMC_Bank == XMC_Bank1_NORSRAM1)
+  if (NewState != DISABLE)
   {
-    XMC_Bank1->BK1CTRLR[XMC_Bank] = 0x000030DB;
+    /* Enable the PCCARD Bank by setting the PBKEN bit in the PCR4 register */
+    XMC_Bank4->BK4CTRL |= BKxCTRL_EN_Set;
   }
-  /* XMC_Bank1_NORSRAM2,  XMC_Bank1_NORSRAM3 or XMC_Bank1_NORSRAM4 */
   else
   {
-    XMC_Bank1->BK1CTRLR[XMC_Bank] = 0x000030D2;
+    /* Disable the PCCARD Bank by clearing the PBKEN bit in the PCR4 register */
+    XMC_Bank4->BK4CTRL &= BKxCTRL_EN_Reset;
   }
-
-  XMC_Bank1->BK1CTRLR[XMC_Bank + 1] = 0x0FFFFFFF;
-  XMC_Bank1E->BK1TMGWR[XMC_Bank] = 0x0FFFFFFF;
 }
 
 /**
-  * @brief  Deinitializes the XMC NAND Banks registers to their default reset values.
+  * @brief  Enables or disables the XMC NAND ECC feature.
   * @param  XMC_Bank: specifies the XMC Bank to be used
   *   This parameter can be one of the following values:
   *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
   *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  * @param  NewState: new state of the XMC NAND ECC feature.
+  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void XMC_NANDReset(uint32_t XMC_Bank)
+void XMC_NANDECCCmd(uint32_t XMC_Bank, FunctionalState NewState)
 {
-  /* Check the parameter */
   assert_param(IS_XMC_NAND_BANK(XMC_Bank));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-  if(XMC_Bank == XMC_Bank2_NAND)
+  if (NewState != DISABLE)
   {
-    /* Set the XMC_Bank2 registers to their reset values */
-    XMC_Bank2->BK2CTRL = 0x00000018;
-    XMC_Bank2->BK2STS = 0x00000040;
-    XMC_Bank2->BK2TMGMEM = 0xFCFCFCFC;
-    XMC_Bank2->BK2TMGATT = 0xFCFCFCFC;
+    /* Enable the selected NAND Bank ECC function by setting the ECCEN bit in the PCRx register */
+    if(XMC_Bank == XMC_Bank2_NAND)
+    {
+      XMC_Bank2->BK2CTRL |= BKxCTRL_ECCEN_Set;
+    }
+    else
+    {
+      XMC_Bank3->BK3CTRL |= BKxCTRL_ECCEN_Set;
+    }
   }
-  /* XMC_Bank3_NAND */
   else
   {
-    /* Set the XMC_Bank3 registers to their reset values */
-    XMC_Bank3->BK3CTRL = 0x00000018;
-    XMC_Bank3->BK3STS = 0x00000040;
-    XMC_Bank3->BK3TMGMEM = 0xFCFCFCFC;
-    XMC_Bank3->BK3TMGATT = 0xFCFCFCFC;
+    /* Disable the selected NAND Bank ECC function by clearing the ECCEN bit in the PCRx register */
+    if(XMC_Bank == XMC_Bank2_NAND)
+    {
+      XMC_Bank2->BK2CTRL &= BKxCTRL_ECCEN_Reset;
+    }
+    else
+    {
+      XMC_Bank3->BK3CTRL &= BKxCTRL_ECCEN_Reset;
+    }
   }
 }
 
 /**
-  * @brief  Deinitializes the XMC PCCARD Bank registers to their default reset values.
-  * @param  None
+  * @brief  Returns the error correction code register value.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  * @retval The Error Correction Code (ECC) value.
+  */
+uint32_t XMC_GetECC(uint32_t XMC_Bank)
+{
+  uint32_t eccval = 0x00000000;
+
+  if(XMC_Bank == XMC_Bank2_NAND)
+  {
+    /* Get the BK2ECC register value */
+    eccval = XMC_Bank2->BK2ECC;
+  }
+  else
+  {
+    /* Get the BK3ECC register value */
+    eccval = XMC_Bank3->BK3ECC;
+  }
+
+  /* Return the error correction code value */
+  return(eccval);
+}
+
+/**
+  * @brief  Enables or disables the specified XMC interrupts.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
+  * @param  XMC_INT: specifies the XMC interrupt sources to be enabled or disabled.
+  *   This parameter can be any combination of the following values:
+  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
+  *     @arg XMC_INT_Level: Level edge detection interrupt.
+  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
+  * @param  NewState: new state of the specified XMC interrupts.
+  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void XMC_PCCARDReset(void)
+void XMC_INTConfig(uint32_t XMC_Bank, uint32_t XMC_INT, FunctionalState NewState)
 {
-  /* Set the XMC_Bank4 registers to their reset values */
-  XMC_Bank4->BK4CTRL = 0x00000018;
-  XMC_Bank4->BK4STS = 0x00000000;
-  XMC_Bank4->BK4TMGMEM = 0xFCFCFCFC;
-  XMC_Bank4->BK4TMGATT = 0xFCFCFCFC;
-  XMC_Bank4->BK4TMGIO = 0xFCFCFCFC;
+  assert_param(IS_XMC_INT_BANK(XMC_Bank));
+  assert_param(IS_XMC_INT(XMC_INT));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the selected XMC_Bank2 interrupts */
+    if(XMC_Bank == XMC_Bank2_NAND)
+    {
+      XMC_Bank2->BK2STS |= XMC_INT;
+    }
+    /* Enable the selected XMC_Bank3 interrupts */
+    else if (XMC_Bank == XMC_Bank3_NAND)
+    {
+      XMC_Bank3->BK3STS |= XMC_INT;
+    }
+    /* Enable the selected XMC_Bank4 interrupts */
+    else
+    {
+      XMC_Bank4->BK4STS |= XMC_INT;
+    }
+  }
+  else
+  {
+    /* Disable the selected XMC_Bank2 interrupts */
+    if(XMC_Bank == XMC_Bank2_NAND)
+    {
+
+      XMC_Bank2->BK2STS &= (uint32_t)~XMC_INT;
+    }
+    /* Disable the selected XMC_Bank3 interrupts */
+    else if (XMC_Bank == XMC_Bank3_NAND)
+    {
+      XMC_Bank3->BK3STS &= (uint32_t)~XMC_INT;
+    }
+    /* Disable the selected XMC_Bank4 interrupts */
+    else
+    {
+      XMC_Bank4->BK4STS &= (uint32_t)~XMC_INT;
+    }
+  }
+}
+
+/**
+  * @brief  Checks whether the specified XMC flag is set or not.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
+  * @param  XMC_FLAG: specifies the flag to check.
+  *   This parameter can be one of the following values:
+  *     @arg XMC_FLAG_RisingEdge: Rising egde detection Flag.
+  *     @arg XMC_FLAG_Level: Level detection Flag.
+  *     @arg XMC_FLAG_FallingEdge: Falling egde detection Flag.
+  *     @arg XMC_FLAG_FEMPT: Fifo empty Flag.
+  * @retval The new state of XMC_FLAG (SET or RESET).
+  */
+FlagStatus XMC_GetFlagStatus(uint32_t XMC_Bank, uint32_t XMC_FLAG)
+{
+  FlagStatus bitstatus = RESET;
+  uint32_t tmpsr = 0x00000000;
+
+  /* Check the parameters */
+  assert_param(IS_XMC_GETFLAG_BANK(XMC_Bank));
+  assert_param(IS_XMC_GET_FLAG(XMC_FLAG));
+
+  if(XMC_Bank == XMC_Bank2_NAND)
+  {
+    tmpsr = XMC_Bank2->BK2STS;
+  }
+  else if(XMC_Bank == XMC_Bank3_NAND)
+  {
+    tmpsr = XMC_Bank3->BK3STS;
+  }
+  /* XMC_Bank4_PCCARD*/
+  else
+  {
+    tmpsr = XMC_Bank4->BK4STS;
+  }
+
+  /* Get the flag status */
+  if ((tmpsr & XMC_FLAG) != (uint16_t)RESET )
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  /* Return the flag status */
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the XMC's pending flags.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
+  * @param  XMC_FLAG: specifies the flag to clear.
+  *   This parameter can be any combination of the following values:
+  *     @arg XMC_FLAG_RisingEdge: Rising egde detection Flag.
+  *     @arg XMC_FLAG_Level: Level detection Flag.
+  *     @arg XMC_FLAG_FallingEdge: Falling egde detection Flag.
+  * @retval None
+  */
+void XMC_ClearFlag(uint32_t XMC_Bank, uint32_t XMC_FLAG)
+{
+  /* Check the parameters */
+  assert_param(IS_XMC_GETFLAG_BANK(XMC_Bank));
+  assert_param(IS_XMC_CLEAR_FLAG(XMC_FLAG)) ;
+
+  if(XMC_Bank == XMC_Bank2_NAND)
+  {
+    XMC_Bank2->BK2STS &= ~XMC_FLAG;
+  }
+  else if(XMC_Bank == XMC_Bank3_NAND)
+  {
+    XMC_Bank3->BK3STS &= ~XMC_FLAG;
+  }
+  /* XMC_Bank4_PCCARD*/
+  else
+  {
+    XMC_Bank4->BK4STS &= ~XMC_FLAG;
+  }
+}
+
+/**
+  * @brief  Checks whether the specified XMC interrupt has occurred or not.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
+  * @param  XMC_INT: specifies the XMC interrupt source to check.
+  *   This parameter can be one of the following values:
+  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
+  *     @arg XMC_INT_Level: Level edge detection interrupt.
+  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
+  * @retval The new state of XMC_INT (SET or RESET).
+  */
+ITStatus XMC_GetINTStatus(uint32_t XMC_Bank, uint32_t XMC_INT)
+{
+  ITStatus bitstatus = RESET;
+  uint32_t tmpsr = 0x0, itstatus = 0x0, itenable = 0x0;
+
+  /* Check the parameters */
+  assert_param(IS_XMC_INT_BANK(XMC_Bank));
+  assert_param(IS_XMC_GET_INT(XMC_INT));
+
+  if(XMC_Bank == XMC_Bank2_NAND)
+  {
+    tmpsr = XMC_Bank2->BK2STS;
+  }
+  else if(XMC_Bank == XMC_Bank3_NAND)
+  {
+    tmpsr = XMC_Bank3->BK3STS;
+  }
+  /* XMC_Bank4_PCCARD*/
+  else
+  {
+    tmpsr = XMC_Bank4->BK4STS;
+  }
+
+  itstatus = tmpsr & XMC_INT;
+
+  itenable = tmpsr & (XMC_INT >> 3);
+
+  if ((itstatus != (uint32_t)RESET)  && (itenable != (uint32_t)RESET))
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the XMC's interrupt pending bits.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
+  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
+  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
+  * @param  XMC_INT: specifies the interrupt pending bit to clear.
+  *   This parameter can be any combination of the following values:
+  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
+  *     @arg XMC_INT_Level: Level edge detection interrupt.
+  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
+  * @retval None
+  */
+void XMC_ClearINTPendingBit(uint32_t XMC_Bank, uint32_t XMC_INT)
+{
+  /* Check the parameters */
+  assert_param(IS_XMC_INT_BANK(XMC_Bank));
+  assert_param(IS_XMC_INT(XMC_INT));
+
+  if(XMC_Bank == XMC_Bank2_NAND)
+  {
+    XMC_Bank2->BK2STS &= ~(XMC_INT >> 3);
+  }
+  else if(XMC_Bank == XMC_Bank3_NAND)
+  {
+    XMC_Bank3->BK3STS &= ~(XMC_INT >> 3);
+  }
+  /* XMC_Bank4_PCCARD*/
+  else
+  {
+    XMC_Bank4->BK4STS &= ~(XMC_INT >> 3);
+  }
 }
 
 /**
@@ -540,332 +788,84 @@ void XMC_NANDCmd(uint32_t XMC_Bank, FunctionalState NewState)
     }
   }
 }
-
 /**
-  * @brief  Enables or disables the PCCARD Memory Bank.
-  * @param  NewState: new state of the PCCARD Memory Bank.
-  *   This parameter can be: ENABLE or DISABLE.
+  * @brief  Deinitializes the XMC NOR/SRAM Banks registers to their default
+  *         reset values.
+  * @param  XMC_Bank: specifies the XMC Bank to be used
+  *   This parameter can be one of the following values:
+  *     @arg XMC_Bank1_NORSRAM1: XMC Bank1 NOR/SRAM1
+  *     @arg XMC_Bank1_NORSRAM2: XMC Bank1 NOR/SRAM2
+  *     @arg XMC_Bank1_NORSRAM3: XMC Bank1 NOR/SRAM3
+  *     @arg XMC_Bank1_NORSRAM4: XMC Bank1 NOR/SRAM4
   * @retval None
   */
-void XMC_PCCARDCmd(FunctionalState NewState)
+void XMC_NORSRAMReset(uint32_t XMC_Bank)
 {
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
+  /* Check the parameter */
+  assert_param(IS_XMC_NORSRAM_REGION(XMC_Bank));
 
-  if (NewState != DISABLE)
+  /* XMC_Bank1_NORSRAM1 */
+  if(XMC_Bank == XMC_Bank1_NORSRAM1)
   {
-    /* Enable the PCCARD Bank by setting the PBKEN bit in the PCR4 register */
-    XMC_Bank4->BK4CTRL |= BKxCTRL_EN_Set;
+    XMC_Bank1->BK1CTRLR[XMC_Bank] = 0x000030DB;
   }
+  /* XMC_Bank1_NORSRAM2,  XMC_Bank1_NORSRAM3 or XMC_Bank1_NORSRAM4 */
   else
   {
-    /* Disable the PCCARD Bank by clearing the PBKEN bit in the PCR4 register */
-    XMC_Bank4->BK4CTRL &= BKxCTRL_EN_Reset;
+    XMC_Bank1->BK1CTRLR[XMC_Bank] = 0x000030D2;
   }
+
+  XMC_Bank1->BK1CTRLR[XMC_Bank + 1] = 0x0FFFFFFF;
+  XMC_Bank1E->BK1TMGWR[XMC_Bank] = 0x0FFFFFFF;
 }
 
 /**
-  * @brief  Enables or disables the XMC NAND ECC feature.
+  * @brief  Deinitializes the XMC NAND Banks registers to their default reset values.
   * @param  XMC_Bank: specifies the XMC Bank to be used
   *   This parameter can be one of the following values:
   *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
   *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  * @param  NewState: new state of the XMC NAND ECC feature.
-  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void XMC_NANDECCCmd(uint32_t XMC_Bank, FunctionalState NewState)
+void XMC_NANDReset(uint32_t XMC_Bank)
 {
+  /* Check the parameter */
   assert_param(IS_XMC_NAND_BANK(XMC_Bank));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the selected NAND Bank ECC function by setting the ECCEN bit in the PCRx register */
-    if(XMC_Bank == XMC_Bank2_NAND)
-    {
-      XMC_Bank2->BK2CTRL |= BKxCTRL_ECCEN_Set;
-    }
-    else
-    {
-      XMC_Bank3->BK3CTRL |= BKxCTRL_ECCEN_Set;
-    }
-  }
-  else
-  {
-    /* Disable the selected NAND Bank ECC function by clearing the ECCEN bit in the PCRx register */
-    if(XMC_Bank == XMC_Bank2_NAND)
-    {
-      XMC_Bank2->BK2CTRL &= BKxCTRL_ECCEN_Reset;
-    }
-    else
-    {
-      XMC_Bank3->BK3CTRL &= BKxCTRL_ECCEN_Reset;
-    }
-  }
-}
-
-/**
-  * @brief  Returns the error correction code register value.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  * @retval The Error Correction Code (ECC) value.
-  */
-uint32_t XMC_GetECC(uint32_t XMC_Bank)
-{
-  uint32_t eccval = 0x00000000;
 
   if(XMC_Bank == XMC_Bank2_NAND)
   {
-    /* Get the BK2ECC register value */
-    eccval = XMC_Bank2->BK2ECC;
+    /* Set the XMC_Bank2 registers to their reset values */
+    XMC_Bank2->BK2CTRL = 0x00000018;
+    XMC_Bank2->BK2STS = 0x00000040;
+    XMC_Bank2->BK2TMGMEM = 0xFCFCFCFC;
+    XMC_Bank2->BK2TMGATT = 0xFCFCFCFC;
   }
+  /* XMC_Bank3_NAND */
   else
   {
-    /* Get the BK3ECC register value */
-    eccval = XMC_Bank3->BK3ECC;
+    /* Set the XMC_Bank3 registers to their reset values */
+    XMC_Bank3->BK3CTRL = 0x00000018;
+    XMC_Bank3->BK3STS = 0x00000040;
+    XMC_Bank3->BK3TMGMEM = 0xFCFCFCFC;
+    XMC_Bank3->BK3TMGATT = 0xFCFCFCFC;
   }
-
-  /* Return the error correction code value */
-  return(eccval);
 }
 
 /**
-  * @brief  Enables or disables the specified XMC interrupts.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
-  * @param  XMC_INT: specifies the XMC interrupt sources to be enabled or disabled.
-  *   This parameter can be any combination of the following values:
-  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
-  *     @arg XMC_INT_Level: Level edge detection interrupt.
-  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
-  * @param  NewState: new state of the specified XMC interrupts.
-  *   This parameter can be: ENABLE or DISABLE.
+  * @brief  Deinitializes the XMC PCCARD Bank registers to their default reset values.
+  * @param  None
   * @retval None
   */
-void XMC_INTConfig(uint32_t XMC_Bank, uint32_t XMC_INT, FunctionalState NewState)
+void XMC_PCCARDReset(void)
 {
-  assert_param(IS_XMC_INT_BANK(XMC_Bank));
-  assert_param(IS_XMC_INT(XMC_INT));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the selected XMC_Bank2 interrupts */
-    if(XMC_Bank == XMC_Bank2_NAND)
-    {
-      XMC_Bank2->BK2STS |= XMC_INT;
-    }
-    /* Enable the selected XMC_Bank3 interrupts */
-    else if (XMC_Bank == XMC_Bank3_NAND)
-    {
-      XMC_Bank3->BK3STS |= XMC_INT;
-    }
-    /* Enable the selected XMC_Bank4 interrupts */
-    else
-    {
-      XMC_Bank4->BK4STS |= XMC_INT;
-    }
-  }
-  else
-  {
-    /* Disable the selected XMC_Bank2 interrupts */
-    if(XMC_Bank == XMC_Bank2_NAND)
-    {
-
-      XMC_Bank2->BK2STS &= (uint32_t)~XMC_INT;
-    }
-    /* Disable the selected XMC_Bank3 interrupts */
-    else if (XMC_Bank == XMC_Bank3_NAND)
-    {
-      XMC_Bank3->BK3STS &= (uint32_t)~XMC_INT;
-    }
-    /* Disable the selected XMC_Bank4 interrupts */
-    else
-    {
-      XMC_Bank4->BK4STS &= (uint32_t)~XMC_INT;
-    }
-  }
+  /* Set the XMC_Bank4 registers to their reset values */
+  XMC_Bank4->BK4CTRL = 0x00000018;
+  XMC_Bank4->BK4STS = 0x00000000;
+  XMC_Bank4->BK4TMGMEM = 0xFCFCFCFC;
+  XMC_Bank4->BK4TMGATT = 0xFCFCFCFC;
+  XMC_Bank4->BK4TMGIO = 0xFCFCFCFC;
 }
 
-/**
-  * @brief  Checks whether the specified XMC flag is set or not.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
-  * @param  XMC_FLAG: specifies the flag to check.
-  *   This parameter can be one of the following values:
-  *     @arg XMC_FLAG_RisingEdge: Rising egde detection Flag.
-  *     @arg XMC_FLAG_Level: Level detection Flag.
-  *     @arg XMC_FLAG_FallingEdge: Falling egde detection Flag.
-  *     @arg XMC_FLAG_FEMPT: Fifo empty Flag.
-  * @retval The new state of XMC_FLAG (SET or RESET).
-  */
-FlagStatus XMC_GetFlagStatus(uint32_t XMC_Bank, uint32_t XMC_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-  uint32_t tmpsr = 0x00000000;
-
-  /* Check the parameters */
-  assert_param(IS_XMC_GETFLAG_BANK(XMC_Bank));
-  assert_param(IS_XMC_GET_FLAG(XMC_FLAG));
-
-  if(XMC_Bank == XMC_Bank2_NAND)
-  {
-    tmpsr = XMC_Bank2->BK2STS;
-  }
-  else if(XMC_Bank == XMC_Bank3_NAND)
-  {
-    tmpsr = XMC_Bank3->BK3STS;
-  }
-  /* XMC_Bank4_PCCARD*/
-  else
-  {
-    tmpsr = XMC_Bank4->BK4STS;
-  }
-
-  /* Get the flag status */
-  if ((tmpsr & XMC_FLAG) != (uint16_t)RESET )
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  /* Return the flag status */
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the XMC's pending flags.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
-  * @param  XMC_FLAG: specifies the flag to clear.
-  *   This parameter can be any combination of the following values:
-  *     @arg XMC_FLAG_RisingEdge: Rising egde detection Flag.
-  *     @arg XMC_FLAG_Level: Level detection Flag.
-  *     @arg XMC_FLAG_FallingEdge: Falling egde detection Flag.
-  * @retval None
-  */
-void XMC_ClearFlag(uint32_t XMC_Bank, uint32_t XMC_FLAG)
-{
-  /* Check the parameters */
-  assert_param(IS_XMC_GETFLAG_BANK(XMC_Bank));
-  assert_param(IS_XMC_CLEAR_FLAG(XMC_FLAG)) ;
-
-  if(XMC_Bank == XMC_Bank2_NAND)
-  {
-    XMC_Bank2->BK2STS &= ~XMC_FLAG;
-  }
-  else if(XMC_Bank == XMC_Bank3_NAND)
-  {
-    XMC_Bank3->BK3STS &= ~XMC_FLAG;
-  }
-  /* XMC_Bank4_PCCARD*/
-  else
-  {
-    XMC_Bank4->BK4STS &= ~XMC_FLAG;
-  }
-}
-
-/**
-  * @brief  Checks whether the specified XMC interrupt has occurred or not.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
-  * @param  XMC_INT: specifies the XMC interrupt source to check.
-  *   This parameter can be one of the following values:
-  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
-  *     @arg XMC_INT_Level: Level edge detection interrupt.
-  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
-  * @retval The new state of XMC_INT (SET or RESET).
-  */
-ITStatus XMC_GetINTStatus(uint32_t XMC_Bank, uint32_t XMC_INT)
-{
-  ITStatus bitstatus = RESET;
-  uint32_t tmpsr = 0x0, itstatus = 0x0, itenable = 0x0;
-
-  /* Check the parameters */
-  assert_param(IS_XMC_INT_BANK(XMC_Bank));
-  assert_param(IS_XMC_GET_INT(XMC_INT));
-
-  if(XMC_Bank == XMC_Bank2_NAND)
-  {
-    tmpsr = XMC_Bank2->BK2STS;
-  }
-  else if(XMC_Bank == XMC_Bank3_NAND)
-  {
-    tmpsr = XMC_Bank3->BK3STS;
-  }
-  /* XMC_Bank4_PCCARD*/
-  else
-  {
-    tmpsr = XMC_Bank4->BK4STS;
-  }
-
-  itstatus = tmpsr & XMC_INT;
-
-  itenable = tmpsr & (XMC_INT >> 3);
-
-  if ((itstatus != (uint32_t)RESET)  && (itenable != (uint32_t)RESET))
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the XMC's interrupt pending bits.
-  * @param  XMC_Bank: specifies the XMC Bank to be used
-  *   This parameter can be one of the following values:
-  *     @arg XMC_Bank2_NAND: XMC Bank2 NAND
-  *     @arg XMC_Bank3_NAND: XMC Bank3 NAND
-  *     @arg XMC_Bank4_PCCARD: XMC Bank4 PCCARD
-  * @param  XMC_INT: specifies the interrupt pending bit to clear.
-  *   This parameter can be any combination of the following values:
-  *     @arg XMC_INT_RisingEdge: Rising edge detection interrupt.
-  *     @arg XMC_INT_Level: Level edge detection interrupt.
-  *     @arg XMC_INT_FallingEdge: Falling edge detection interrupt.
-  * @retval None
-  */
-void XMC_ClearINTPendingBit(uint32_t XMC_Bank, uint32_t XMC_INT)
-{
-  /* Check the parameters */
-  assert_param(IS_XMC_INT_BANK(XMC_Bank));
-  assert_param(IS_XMC_INT(XMC_INT));
-
-  if(XMC_Bank == XMC_Bank2_NAND)
-  {
-    XMC_Bank2->BK2STS &= ~(XMC_INT >> 3);
-  }
-  else if(XMC_Bank == XMC_Bank3_NAND)
-  {
-    XMC_Bank3->BK3STS &= ~(XMC_INT >> 3);
-  }
-  /* XMC_Bank4_PCCARD*/
-  else
-  {
-    XMC_Bank4->BK4STS &= ~(XMC_INT >> 3);
-  }
-}
 
 /**
   * @}

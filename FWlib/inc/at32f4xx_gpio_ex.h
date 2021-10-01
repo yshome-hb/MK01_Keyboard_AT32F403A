@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_gpio_ex.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx GPIO extended header file
   **************************************************************************
   */
@@ -323,6 +323,8 @@ void GPIO_ResetBits(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
 void GPIO_WriteBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin, BitState BitVal);
 void GPIO_Write(GPIO_Type* GPIOx, uint16_t PortVal);
 void GPIO_PinsLockConfig(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
+void GPIO_PinsEnhanceSlewRate(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState);
+void GPIO_PinsHugeDriven(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState);
 void GPIO_PinAFConfig(GPIO_Type* GPIOx, uint16_t GPIO_PinSource, uint8_t GPIO_AF);
 #if defined (AT32F421PF4P7) || defined (AT32F421PF8P7)
 void GPIO_F421PFxP7_LowPower(void);

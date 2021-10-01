@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_spi.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx SPI header file
   **************************************************************************
   */
@@ -471,14 +471,13 @@ typedef struct
 /** @defgroup SPI_Exported_Functions
   * @{
   */
-
-void SPI_I2S_Reset(SPI_Type* SPIx);
-void SPI_Init(SPI_Type* SPIx, SPI_InitType* SPI_InitStruct);
-void I2S_Init(SPI_Type* SPIx, I2S_InitType* I2S_InitStruct);
-void SPI_DefaultInitParaConfig(SPI_InitType* SPI_InitStruct);
-void I2S_DefaultInit(I2S_InitType* I2S_InitStruct);
-void SPI_Enable(SPI_Type* SPIx, FunctionalState NewState);
-void I2S_Enable(SPI_Type* SPIx, FunctionalState NewState);
+uint16_t SPI_GetCRC(SPI_Type* SPIx, uint8_t SPI_CRC);
+uint16_t SPI_GetCRCPolynomial(SPI_Type* SPIx);
+void SPI_HalfDuplexTransModeConfig(SPI_Type* SPIx, uint16_t SPI_Direction);
+FlagStatus SPI_I2S_GetFlagStatus(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG);
+void SPI_I2S_ClearFlag(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG);
+ITStatus SPI_I2S_GetITStatus(SPI_Type* SPIx, uint8_t SPI_I2S_INT);
+void SPI_I2S_ClearINTPendingBit(SPI_Type* SPIx, uint8_t SPI_I2S_INT);
 void SPI_I2S_INTConfig(SPI_Type* SPIx, uint8_t SPI_I2S_INT, FunctionalState NewState);
 void SPI_I2S_DMAEnable(SPI_Type* SPIx, uint16_t SPI_I2S_DMAReq, FunctionalState NewState);
 void SPI_I2S_TxData(SPI_Type* SPIx, uint16_t Data);
@@ -488,14 +487,13 @@ void SPI_NSSHardwareOutputEnable(SPI_Type* SPIx, FunctionalState NewState);
 void SPI_FrameSizeConfig(SPI_Type* SPIx, uint16_t SPI_DataSize);
 void SPI_TxCRC(SPI_Type* SPIx);
 void SPI_CRCEN(SPI_Type* SPIx, FunctionalState NewState);
-uint16_t SPI_GetCRC(SPI_Type* SPIx, uint8_t SPI_CRC);
-uint16_t SPI_GetCRCPolynomial(SPI_Type* SPIx);
-void SPI_HalfDuplexTransModeConfig(SPI_Type* SPIx, uint16_t SPI_Direction);
-FlagStatus SPI_I2S_GetFlagStatus(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG);
-void SPI_I2S_ClearFlag(SPI_Type* SPIx, uint16_t SPI_I2S_FLAG);
-ITStatus SPI_I2S_GetITStatus(SPI_Type* SPIx, uint8_t SPI_I2S_INT);
-void SPI_I2S_ClearINTPendingBit(SPI_Type* SPIx, uint8_t SPI_I2S_INT);
-
+void SPI_I2S_Reset(SPI_Type* SPIx);
+void SPI_Init(SPI_Type* SPIx, SPI_InitType* SPI_InitStruct);
+void I2S_Init(SPI_Type* SPIx, I2S_InitType* I2S_InitStruct);
+void SPI_DefaultInitParaConfig(SPI_InitType* SPI_InitStruct);
+void I2S_DefaultInit(I2S_InitType* I2S_InitStruct);
+void SPI_Enable(SPI_Type* SPIx, FunctionalState NewState);
+void I2S_Enable(SPI_Type* SPIx, FunctionalState NewState);
 #ifdef __cplusplus
 }
 #endif

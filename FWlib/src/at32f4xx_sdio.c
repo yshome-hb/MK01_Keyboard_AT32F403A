@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_sdio.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx SDIO source file
   **************************************************************************
   */
@@ -140,257 +140,6 @@
 /** @defgroup SDIO_Private_Functions
   * @{
   */
-
-/**
-  * @brief  Deinitializes the SDIO peripheral registers to their default reset values.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @retval None
-  */
-void SDIO_Reset(SDIO_Type * SDIOx)
-{
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  SDIOx->POWER = 0x00000000;
-  SDIOx->CLKCTRL = 0x00000000;
-  SDIOx->ARG = 0x00000000;
-  SDIOx->CMD = 0x00000000;
-  SDIOx->DTTMR = 0x00000000;
-  SDIOx->DTLEN = 0x00000000;
-  SDIOx->DTCTRL = 0x00000000;
-  SDIOx->INTCLR = 0x00C007FF;
-  SDIOx->INTEN = 0x00000000;
-}
-
-/**
-  * @brief  Initializes the SDIO peripheral according to the specified
-  *         parameters in the SDIO_InitStruct.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  SDIO_InitStruct : pointer to a SDIO_InitType structure
-  *         that contains the configuration information for the SDIO peripheral.
-  * @retval None
-  */
-void SDIO_Init(SDIO_Type * SDIOx, SDIO_InitType* SDIO_InitStruct)
-{
-  uint32_t tmpreg = 0;
-
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_SDIO_CLK_EDGE(SDIO_InitStruct->SDIO_ClkEdge));
-  assert_param(IS_SDIO_CLK_BYPASS(SDIO_InitStruct->SDIO_ClkBypass));
-  assert_param(IS_SDIO_CLK_POWER_SAVE(SDIO_InitStruct->SDIO_ClkPowerSave));
-  assert_param(IS_SDIO_BUS_WIDTH(SDIO_InitStruct->SDIO_BusWidth));
-  assert_param(IS_SDIO_FLOW_CTRL(SDIO_InitStruct->SDIO_FlowCtrl));
-
-  /*---------------------------- SDIO CLKCR Configuration ------------------------*/
-  /* Get the SDIOx CLKCR value */
-  tmpreg = SDIOx->CLKCTRL;
-
-  /* Clear CLKDIV, PWRSAV, BYPASS, WIDBUS, NEGEDGE, HWFC_EN bits */
-  tmpreg &= CLKCTRL_CLEAR_MASK;
-
-  /* Set PWRSAV bit according to SDIO_ClockPowerSave value */
-  /* Set BYPASS bit according to SDIO_ClockBypass value */
-  /* Set WIDBUS bits according to SDIO_BusWide value */
-  /* Set NEGEDGE bits according to SDIO_ClockEdge value */
-  /* Set HWFC_EN bits according to SDIO_HardwareFlowControl value */
-  tmpreg |= (SDIO_InitStruct->SDIO_ClkPowerSave | SDIO_InitStruct->SDIO_ClkBypass |
-             SDIO_InitStruct->SDIO_BusWidth | SDIO_InitStruct->SDIO_ClkEdge | SDIO_InitStruct->SDIO_FlowCtrl);
-
-  /* Set CLKDIV bits according to SDIO_ClockDiv value */
-  tmpreg |= ((SDIO_InitStruct->SDIO_ClkPsc & 0x00FF) | ((SDIO_InitStruct->SDIO_ClkPsc & 0x0300) << 7));
-  /* Write to SDIOx CLKCR */
-  SDIOx->CLKCTRL = tmpreg;
-}
-
-/**
-  * @brief  Fills each SDIO_InitStruct member with its default value.
-  * @param  SDIO_InitStruct: pointer to an SDIO_InitType structure which
-  *   will be initialized.
-  * @retval None
-  */
-void SDIO_StructInit(SDIO_InitType* SDIO_InitStruct)
-{
-  /* SDIO_InitStruct members default value */
-  SDIO_InitStruct->SDIO_ClkPsc = 0x00;
-  SDIO_InitStruct->SDIO_ClkEdge = SDIO_ClkEdge_Rising;
-  SDIO_InitStruct->SDIO_ClkBypass = SDIO_ClkBypass_Disable;
-  SDIO_InitStruct->SDIO_ClkPowerSave = SDIO_ClkPowerSave_Disable;
-  SDIO_InitStruct->SDIO_BusWidth = SDIO_BusWidth_1b;
-  SDIO_InitStruct->SDIO_FlowCtrl = SDIO_FlowCtrl_Disable;
-}
-
-/**
-  * @brief  Enables or disables the SDIO Clock.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  NewState: new state of the SDIO Clock. This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void SDIO_ClockCmd(SDIO_Type * SDIOx, FunctionalState NewState)
-{
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the SDIO Clock. */
-    SDIOx->CLKCTRL |= CLKCTRL_CLKEN_Set;
-  }
-  else
-  {
-    /* Disable the SDIO Clock. */
-    SDIOx->CLKCTRL &= CLKCTRL_CLKEN_Rst;
-  }
-}
-
-/**
-  * @brief  Sets the power status of the controller.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  SDIO_PowerState: new state of the Power state.
-  *   This parameter can be one of the following values:
-  *     @arg SDIO_PowerSave_OFF
-  *     @arg SDIO_PowerSave_ON
-  * @retval None
-  */
-void SDIO_SetPowerSaveState(SDIO_Type * SDIOx, uint32_t SDIO_PowerState)
-{
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_SDIO_POWER_SAVE(SDIO_PowerState));
-
-  SDIOx->POWER &= PWR_PWRCTRL_MASK;
-  SDIOx->POWER |= SDIO_PowerState;
-}
-
-/**
-  * @brief  Gets the power status of the controller.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @retval Power status of the controller. The returned value can
-  *   be one of the following:
-  * - 0x00: Power OFF
-  * - 0x02: Power UP
-  * - 0x03: Power ON
-  */
-uint32_t SDIO_GetPowerSaveState(SDIO_Type * SDIOx)
-{
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  return (SDIOx->POWER & (~PWR_PWRCTRL_MASK));
-}
-
-/**
-  * @brief  Enables or disables the SDIO interrupts.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  SDIO_INT: specifies the SDIO interrupt sources to be enabled or disabled.
-  *   This parameter can be one or a combination of the following values:
-  *     @arg SDIO_INT_CMDFAIL:    Command response received (CRC check failed) interrupt
-  *     @arg SDIO_INT_DTFAIL:     Data block sent/received (CRC check failed) interrupt
-  *     @arg SDIO_INT_CMDTIMEOUT: Command response timeout interrupt
-  *     @arg SDIO_INT_DTTIMEOUT:  Data timeout interrupt
-  *     @arg SDIO_INT_TXERRU:     Transmit FIFO underrun error interrupt
-  *     @arg SDIO_INT_RXERRO:     Received FIFO overrun error interrupt
-  *     @arg SDIO_INT_CMDRSPCMPL: Command response received (CRC check passed) interrupt
-  *     @arg SDIO_INT_CMDCMPL:    Command sent (no response required) interrupt
-  *     @arg SDIO_INT_DTCMPL:     Data end (data counter, SDIDCOUNT, is zero) interrupt
-  *     @arg SDIO_INT_SBITERR:    Start bit not detected on all data signals in wide bus mode interrupt
-  *     @arg SDIO_INT_DTBLKCMPL:  Data block sent/received (CRC check passed) interrupt
-  *     @arg SDIO_INT_DOCMD:      Command transfer in progress interrupt
-  *     @arg SDIO_INT_DOTX:       Data transmit in progress interrupt
-  *     @arg SDIO_INT_DORX:       Data receive in progress interrupt
-  *     @arg SDIO_INT_TXBUF_H:    Transmit FIFO Half Empty interrupt
-  *     @arg SDIO_INT_RXBUF_H:    Receive FIFO Half Full interrupt
-  *     @arg SDIO_INT_TXBUF_F:    Transmit FIFO full interrupt
-  *     @arg SDIO_INT_RXBUF_F:    Receive FIFO full interrupt
-  *     @arg SDIO_INT_TXBUF_E:    Transmit FIFO empty interrupt
-  *     @arg SDIO_INT_RXBUF_E:    Receive FIFO empty interrupt
-  *     @arg SDIO_INT_TXBUF:      Data available in transmit FIFO interrupt
-  *     @arg SDIO_INT_RXBUF:      Data available in receive FIFO interrupt
-  *     @arg SDIO_INT_SDIOIF:     SD I/O interrupt received interrupt
-  *     @arg SDIO_INT_ATACMPL:    CE-ATA command completion signal received for CMD61 interrupt
-  * @param  NewState: new state of the specified SDIO interrupts.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void SDIO_INTConfig(SDIO_Type * SDIOx, uint32_t SDIO_INT, FunctionalState NewState)
-{
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_SDIO_INT(SDIO_INT));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the SDIO interrupts */
-    SDIOx->INTEN |= SDIO_INT;
-  }
-  else
-  {
-    /* Disable the SDIO interrupts */
-    SDIOx->INTEN &= ~SDIO_INT;
-  }
-}
-
-/**
-  * @brief  Enables or disables the SDIO DMA request.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  NewState: new state of the selected SDIO DMA request.
-  *   This parameter can be: ENABLE or DISABLE.
-  * @retval None
-  */
-void SDIO_DMACmd(SDIO_Type * SDIOx, FunctionalState NewState)
-{
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the selected SDIO DMA request. */
-    SDIOx->DTCTRL |= DTCTRL_DMAEN_Set;
-  }
-  else
-  {
-    /* Disable the selected SDIO DMA request. */
-    SDIOx->DTCTRL &= DTCTRL_DMAEN_Rst;
-  }
-}
-
-/**
-  * @brief  Initializes the SDIO Command according to the specified
-  *         parameters in the SDIO_CmdInitStruct and send the command.
-  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
-  * @param  SDIO_CmdInitStruct : pointer to a SDIO_CmdInitType
-  *         structure that contains the configuration information for the SDIO command.
-  * @retval None
-  */
-void SDIO_SendCommand(SDIO_Type * SDIOx, SDIO_CmdInitType *SDIO_CmdInitStruct)
-{
-  uint32_t tmpreg = 0;
-
-  /* Check the parameters */
-  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
-  assert_param(IS_SDIO_CMD_IDX(SDIO_CmdInitStruct->SDIO_CmdIdx));
-  assert_param(IS_SDIO_RSP_TYPE(SDIO_CmdInitStruct->SDIO_Resp));
-  assert_param(IS_SDIO_WAIT(SDIO_CmdInitStruct->SDIO_Wait));
-  assert_param(IS_SDIO_CPSM(SDIO_CmdInitStruct->SDIO_CPSM));
-
-  /*---------------------------- SDIOx ARG Configuration ------------------------*/
-  /* Set the SDIOx Argument value */
-  SDIOx->ARG = SDIO_CmdInitStruct->SDIO_Argu;
-
-  /*---------------------------- SDIOx CMD Configuration ------------------------*/
-  /* Get the SDIOx CMD value */
-  tmpreg = SDIOx->CMD;
-  /* Clear CMDINDEX, WAITRESP, WAITINT, WAITPEND, CPSMEN bits */
-  tmpreg &= CMD_CLEAR_MASK;
-  /* Set CMDINDEX bits according to SDIO_CmdIndex value */
-  /* Set WAITRESP bits according to SDIO_Response value */
-  /* Set WAITINT and WAITPEND bits according to SDIO_Wait value */
-  /* Set CPSMEN bits according to SDIO_CPSM value */
-  tmpreg |= (uint32_t)SDIO_CmdInitStruct->SDIO_CmdIdx | SDIO_CmdInitStruct->SDIO_Resp
-            | SDIO_CmdInitStruct->SDIO_Wait | SDIO_CmdInitStruct->SDIO_CPSM;
-
-  /* Write to SDIOx CMD */
-  SDIOx->CMD = tmpreg;
-}
 
 /**
   * @brief  Fills each SDIO_CmdInitStruct member with its default value.
@@ -900,6 +649,258 @@ void SDIO_ClearINTPendingBit(SDIO_Type * SDIOx, uint32_t SDIO_INT)
 
   SDIOx->INTCLR = SDIO_INT;
 }
+
+/**
+  * @brief  Deinitializes the SDIO peripheral registers to their default reset values.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @retval None
+  */
+void SDIO_Reset(SDIO_Type * SDIOx)
+{
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  SDIOx->POWER = 0x00000000;
+  SDIOx->CLKCTRL = 0x00000000;
+  SDIOx->ARG = 0x00000000;
+  SDIOx->CMD = 0x00000000;
+  SDIOx->DTTMR = 0x00000000;
+  SDIOx->DTLEN = 0x00000000;
+  SDIOx->DTCTRL = 0x00000000;
+  SDIOx->INTCLR = 0x00C007FF;
+  SDIOx->INTEN = 0x00000000;
+}
+
+/**
+  * @brief  Initializes the SDIO peripheral according to the specified
+  *         parameters in the SDIO_InitStruct.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  SDIO_InitStruct : pointer to a SDIO_InitType structure
+  *         that contains the configuration information for the SDIO peripheral.
+  * @retval None
+  */
+void SDIO_Init(SDIO_Type * SDIOx, SDIO_InitType* SDIO_InitStruct)
+{
+  uint32_t tmpreg = 0;
+
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_SDIO_CLK_EDGE(SDIO_InitStruct->SDIO_ClkEdge));
+  assert_param(IS_SDIO_CLK_BYPASS(SDIO_InitStruct->SDIO_ClkBypass));
+  assert_param(IS_SDIO_CLK_POWER_SAVE(SDIO_InitStruct->SDIO_ClkPowerSave));
+  assert_param(IS_SDIO_BUS_WIDTH(SDIO_InitStruct->SDIO_BusWidth));
+  assert_param(IS_SDIO_FLOW_CTRL(SDIO_InitStruct->SDIO_FlowCtrl));
+
+  /*---------------------------- SDIO CLKCR Configuration ------------------------*/
+  /* Get the SDIOx CLKCR value */
+  tmpreg = SDIOx->CLKCTRL;
+
+  /* Clear CLKDIV, PWRSAV, BYPASS, WIDBUS, NEGEDGE, HWFC_EN bits */
+  tmpreg &= CLKCTRL_CLEAR_MASK;
+
+  /* Set PWRSAV bit according to SDIO_ClockPowerSave value */
+  /* Set BYPASS bit according to SDIO_ClockBypass value */
+  /* Set WIDBUS bits according to SDIO_BusWide value */
+  /* Set NEGEDGE bits according to SDIO_ClockEdge value */
+  /* Set HWFC_EN bits according to SDIO_HardwareFlowControl value */
+  tmpreg |= (SDIO_InitStruct->SDIO_ClkPowerSave | SDIO_InitStruct->SDIO_ClkBypass |
+             SDIO_InitStruct->SDIO_BusWidth | SDIO_InitStruct->SDIO_ClkEdge | SDIO_InitStruct->SDIO_FlowCtrl);
+
+  /* Set CLKDIV bits according to SDIO_ClockDiv value */
+  tmpreg |= ((SDIO_InitStruct->SDIO_ClkPsc & 0x00FF) | ((SDIO_InitStruct->SDIO_ClkPsc & 0x0300) << 7));
+  /* Write to SDIOx CLKCR */
+  SDIOx->CLKCTRL = tmpreg;
+}
+
+/**
+  * @brief  Fills each SDIO_InitStruct member with its default value.
+  * @param  SDIO_InitStruct: pointer to an SDIO_InitType structure which
+  *   will be initialized.
+  * @retval None
+  */
+void SDIO_StructInit(SDIO_InitType* SDIO_InitStruct)
+{
+  /* SDIO_InitStruct members default value */
+  SDIO_InitStruct->SDIO_ClkPsc = 0x00;
+  SDIO_InitStruct->SDIO_ClkEdge = SDIO_ClkEdge_Rising;
+  SDIO_InitStruct->SDIO_ClkBypass = SDIO_ClkBypass_Disable;
+  SDIO_InitStruct->SDIO_ClkPowerSave = SDIO_ClkPowerSave_Disable;
+  SDIO_InitStruct->SDIO_BusWidth = SDIO_BusWidth_1b;
+  SDIO_InitStruct->SDIO_FlowCtrl = SDIO_FlowCtrl_Disable;
+}
+
+/**
+  * @brief  Enables or disables the SDIO Clock.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  NewState: new state of the SDIO Clock. This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void SDIO_ClockCmd(SDIO_Type * SDIOx, FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the SDIO Clock. */
+    SDIOx->CLKCTRL |= CLKCTRL_CLKEN_Set;
+  }
+  else
+  {
+    /* Disable the SDIO Clock. */
+    SDIOx->CLKCTRL &= CLKCTRL_CLKEN_Rst;
+  }
+}
+
+/**
+  * @brief  Sets the power status of the controller.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  SDIO_PowerState: new state of the Power state.
+  *   This parameter can be one of the following values:
+  *     @arg SDIO_PowerSave_OFF
+  *     @arg SDIO_PowerSave_ON
+  * @retval None
+  */
+void SDIO_SetPowerSaveState(SDIO_Type * SDIOx, uint32_t SDIO_PowerState)
+{
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_SDIO_POWER_SAVE(SDIO_PowerState));
+
+  SDIOx->POWER &= PWR_PWRCTRL_MASK;
+  SDIOx->POWER |= SDIO_PowerState;
+}
+
+/**
+  * @brief  Gets the power status of the controller.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @retval Power status of the controller. The returned value can
+  *   be one of the following:
+  * - 0x00: Power OFF
+  * - 0x02: Power UP
+  * - 0x03: Power ON
+  */
+uint32_t SDIO_GetPowerSaveState(SDIO_Type * SDIOx)
+{
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  return (SDIOx->POWER & (~PWR_PWRCTRL_MASK));
+}
+
+/**
+  * @brief  Enables or disables the SDIO interrupts.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  SDIO_INT: specifies the SDIO interrupt sources to be enabled or disabled.
+  *   This parameter can be one or a combination of the following values:
+  *     @arg SDIO_INT_CMDFAIL:    Command response received (CRC check failed) interrupt
+  *     @arg SDIO_INT_DTFAIL:     Data block sent/received (CRC check failed) interrupt
+  *     @arg SDIO_INT_CMDTIMEOUT: Command response timeout interrupt
+  *     @arg SDIO_INT_DTTIMEOUT:  Data timeout interrupt
+  *     @arg SDIO_INT_TXERRU:     Transmit FIFO underrun error interrupt
+  *     @arg SDIO_INT_RXERRO:     Received FIFO overrun error interrupt
+  *     @arg SDIO_INT_CMDRSPCMPL: Command response received (CRC check passed) interrupt
+  *     @arg SDIO_INT_CMDCMPL:    Command sent (no response required) interrupt
+  *     @arg SDIO_INT_DTCMPL:     Data end (data counter, SDIDCOUNT, is zero) interrupt
+  *     @arg SDIO_INT_SBITERR:    Start bit not detected on all data signals in wide bus mode interrupt
+  *     @arg SDIO_INT_DTBLKCMPL:  Data block sent/received (CRC check passed) interrupt
+  *     @arg SDIO_INT_DOCMD:      Command transfer in progress interrupt
+  *     @arg SDIO_INT_DOTX:       Data transmit in progress interrupt
+  *     @arg SDIO_INT_DORX:       Data receive in progress interrupt
+  *     @arg SDIO_INT_TXBUF_H:    Transmit FIFO Half Empty interrupt
+  *     @arg SDIO_INT_RXBUF_H:    Receive FIFO Half Full interrupt
+  *     @arg SDIO_INT_TXBUF_F:    Transmit FIFO full interrupt
+  *     @arg SDIO_INT_RXBUF_F:    Receive FIFO full interrupt
+  *     @arg SDIO_INT_TXBUF_E:    Transmit FIFO empty interrupt
+  *     @arg SDIO_INT_RXBUF_E:    Receive FIFO empty interrupt
+  *     @arg SDIO_INT_TXBUF:      Data available in transmit FIFO interrupt
+  *     @arg SDIO_INT_RXBUF:      Data available in receive FIFO interrupt
+  *     @arg SDIO_INT_SDIOIF:     SD I/O interrupt received interrupt
+  *     @arg SDIO_INT_ATACMPL:    CE-ATA command completion signal received for CMD61 interrupt
+  * @param  NewState: new state of the specified SDIO interrupts.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void SDIO_INTConfig(SDIO_Type * SDIOx, uint32_t SDIO_INT, FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_SDIO_INT(SDIO_INT));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the SDIO interrupts */
+    SDIOx->INTEN |= SDIO_INT;
+  }
+  else
+  {
+    /* Disable the SDIO interrupts */
+    SDIOx->INTEN &= ~SDIO_INT;
+  }
+}
+
+/**
+  * @brief  Enables or disables the SDIO DMA request.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  NewState: new state of the selected SDIO DMA request.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void SDIO_DMACmd(SDIO_Type * SDIOx, FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the selected SDIO DMA request. */
+    SDIOx->DTCTRL |= DTCTRL_DMAEN_Set;
+  }
+  else
+  {
+    /* Disable the selected SDIO DMA request. */
+    SDIOx->DTCTRL &= DTCTRL_DMAEN_Rst;
+  }
+}
+
+/**
+  * @brief  Initializes the SDIO Command according to the specified
+  *         parameters in the SDIO_CmdInitStruct and send the command.
+  * @param  SDIOx: where x can be 1 or 2 to select the SDIO peripheral.
+  * @param  SDIO_CmdInitStruct : pointer to a SDIO_CmdInitType
+  *         structure that contains the configuration information for the SDIO command.
+  * @retval None
+  */
+void SDIO_SendCommand(SDIO_Type * SDIOx, SDIO_CmdInitType *SDIO_CmdInitStruct)
+{
+  uint32_t tmpreg = 0;
+
+  /* Check the parameters */
+  assert_param(IS_SDIO_ALL_PERIPH(SDIOx));
+  assert_param(IS_SDIO_CMD_IDX(SDIO_CmdInitStruct->SDIO_CmdIdx));
+  assert_param(IS_SDIO_RSP_TYPE(SDIO_CmdInitStruct->SDIO_Resp));
+  assert_param(IS_SDIO_WAIT(SDIO_CmdInitStruct->SDIO_Wait));
+  assert_param(IS_SDIO_CPSM(SDIO_CmdInitStruct->SDIO_CPSM));
+
+  /*---------------------------- SDIOx ARG Configuration ------------------------*/
+  /* Set the SDIOx Argument value */
+  SDIOx->ARG = SDIO_CmdInitStruct->SDIO_Argu;
+
+  /*---------------------------- SDIOx CMD Configuration ------------------------*/
+  /* Get the SDIOx CMD value */
+  tmpreg = SDIOx->CMD;
+  /* Clear CMDINDEX, WAITRESP, WAITINT, WAITPEND, CPSMEN bits */
+  tmpreg &= CMD_CLEAR_MASK;
+  /* Set CMDINDEX bits according to SDIO_CmdIndex value */
+  /* Set WAITRESP bits according to SDIO_Response value */
+  /* Set WAITINT and WAITPEND bits according to SDIO_Wait value */
+  /* Set CPSMEN bits according to SDIO_CPSM value */
+  tmpreg |= (uint32_t)SDIO_CmdInitStruct->SDIO_CmdIdx | SDIO_CmdInitStruct->SDIO_Resp
+            | SDIO_CmdInitStruct->SDIO_Wait | SDIO_CmdInitStruct->SDIO_CPSM;
+
+  /* Write to SDIOx CMD */
+  SDIOx->CMD = tmpreg;
+}
+
 
 /**
   * @}

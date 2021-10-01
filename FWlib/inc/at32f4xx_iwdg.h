@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_iwdg.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx IWDG header file
   **************************************************************************
   */
@@ -100,12 +100,11 @@ extern "C" {
 /** @defgroup IWDG_Exported_Functions
   * @{
   */
-
-void IWDG_KeyRegWrite(uint16_t IWDG_WriteAccess);
-void IWDG_SetPrescaler(uint8_t IWDG_Prescaler);
 void IWDG_SetReload(uint16_t Reload);
 void IWDG_ReloadCounter(void);
 void IWDG_Enable(void);
+void IWDG_KeyRegWrite(uint16_t IWDG_WriteAccess);
+void IWDG_SetPrescaler(uint8_t IWDG_Prescaler);
 FlagStatus IWDG_GetFlagStatus(uint16_t IWDG_FLAG);
 
 #ifdef __cplusplus

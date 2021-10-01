@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_bkp.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx BKP header file
   **************************************************************************
   */
@@ -164,19 +164,18 @@ extern "C" {
 /** @defgroup BKP_Exported_Functions
   * @{
   */
-
-void BKP_Reset(void);
-void BKP_TamperPinLvConfig(uint16_t BKP_TamperPinLevel);
-void BKP_TamperPinCmd(FunctionalState NewState);
-void BKP_IntConfig(FunctionalState NewState);
-void BKP_RTCOutputConfig(uint16_t BKP_RTCOutputSource);
-void BKP_SetRTCCalValue(uint8_t CalibrationValue);
-void BKP_WriteBackupReg(uint16_t BKP_DR, uint16_t Data);
-uint16_t BKP_ReadBackupReg(uint16_t BKP_DR);
 FlagStatus BKP_GetFlagStatus(void);
 void BKP_ClearFlag(void);
 ITStatus BKP_GetIntStatus(void);
 void BKP_ClearIntPendingBit(void);
+void BKP_Reset(void);
+void BKP_SetRTCCalValue(uint8_t CalibrationValue);
+void BKP_WriteBackupReg(uint16_t BKP_DR, uint16_t Data);
+uint16_t BKP_ReadBackupReg(uint16_t BKP_DR);
+void BKP_TamperPinLvConfig(uint16_t BKP_TamperPinLevel);
+void BKP_TamperPinCmd(FunctionalState NewState);
+void BKP_IntConfig(FunctionalState NewState);
+void BKP_RTCOutputConfig(uint16_t BKP_RTCOutputSource);
 
 #ifdef __cplusplus
 }

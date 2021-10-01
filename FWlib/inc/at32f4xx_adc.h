@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_adc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx ADC header file
   **************************************************************************
   */
@@ -511,12 +511,15 @@ typedef struct
 /** @defgroup ADC_Exported_Functions
   * @{
   */
-
-void ADC_Reset(ADC_Type* ADCx);
-void ADC_Init(ADC_Type* ADCx, ADC_InitType* ADC_InitStruct);
-void ADC_StructInit(ADC_InitType* ADC_InitStruct);
-void ADC_Ctrl(ADC_Type* ADCx, FunctionalState NewState);
-void ADC_DMACtrl(ADC_Type* ADCx, FunctionalState NewState);
+void ADC_SetInjectedOffset(ADC_Type* ADCx, uint8_t ADC_InjectedChannel, uint16_t Offset);
+uint16_t ADC_GetInjectedConversionValue(ADC_Type* ADCx, uint8_t ADC_InjectedChannel);
+void ADC_AnalogWDGCtrl(ADC_Type* ADCx, uint32_t ADC_AnalogWatchdog);
+void ADC_AnalogWDGThresholdsConfig(ADC_Type* ADCx, uint16_t HighThreshold, uint16_t LowThreshold);
+void ADC_AnalogWDGSingleChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel);
+void ADC_TempSensorVrefintCtrl(FunctionalState NewState);
+FlagStatus ADC_GetFlagStatus(ADC_Type* ADCx, uint8_t ADC_FLAG);
+void ADC_ClearFlag(ADC_Type* ADCx, uint8_t ADC_FLAG);
+ITStatus ADC_GetINTStatus(ADC_Type* ADCx, uint16_t ADC_INT);
 void ADC_INTConfig(ADC_Type* ADCx, uint16_t ADC_INT, FunctionalState NewState);
 void ADC_RstCalibration(ADC_Type* ADCx);
 FlagStatus ADC_GetResetCalibrationStatus(ADC_Type* ADCx);
@@ -527,6 +530,7 @@ FlagStatus ADC_GetSoftwareStartConvStatus(ADC_Type* ADCx);
 void ADC_DiscModeChannelCountConfig(ADC_Type* ADCx, uint8_t Number);
 void ADC_DiscModeCtrl(ADC_Type* ADCx, FunctionalState NewState);
 void ADC_RegularChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel, uint8_t Rank, uint8_t ADC_SampleTime);
+void ADC_ClearINTPendingBit(ADC_Type* ADCx, uint16_t ADC_INT);
 void ADC_ExternalTrigConvCtrl(ADC_Type* ADCx, FunctionalState NewState);
 uint16_t ADC_GetConversionValue(ADC_Type* ADCx);
 uint32_t ADC_GetDualModeConversionValue(void);
@@ -538,17 +542,11 @@ void ADC_SoftwareStartInjectedConvCtrl(ADC_Type* ADCx, FunctionalState NewState)
 FlagStatus ADC_GetSoftwareStartInjectedConvCtrlStatus(ADC_Type* ADCx);
 void ADC_InjectedChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel, uint8_t Rank, uint8_t ADC_SampleTime);
 void ADC_InjectedSequencerLengthConfig(ADC_Type* ADCx, uint8_t Length);
-void ADC_SetInjectedOffset(ADC_Type* ADCx, uint8_t ADC_InjectedChannel, uint16_t Offset);
-uint16_t ADC_GetInjectedConversionValue(ADC_Type* ADCx, uint8_t ADC_InjectedChannel);
-void ADC_AnalogWDGCtrl(ADC_Type* ADCx, uint32_t ADC_AnalogWatchdog);
-void ADC_AnalogWDGThresholdsConfig(ADC_Type* ADCx, uint16_t HighThreshold, uint16_t LowThreshold);
-void ADC_AnalogWDGSingleChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel);
-void ADC_TempSensorVrefintCtrl(FunctionalState NewState);
-FlagStatus ADC_GetFlagStatus(ADC_Type* ADCx, uint8_t ADC_FLAG);
-void ADC_ClearFlag(ADC_Type* ADCx, uint8_t ADC_FLAG);
-ITStatus ADC_GetINTStatus(ADC_Type* ADCx, uint16_t ADC_INT);
-void ADC_ClearINTPendingBit(ADC_Type* ADCx, uint16_t ADC_INT);
-
+void ADC_Reset(ADC_Type* ADCx);
+void ADC_Init(ADC_Type* ADCx, ADC_InitType* ADC_InitStruct);
+void ADC_StructInit(ADC_InitType* ADC_InitStruct);
+void ADC_Ctrl(ADC_Type* ADCx, FunctionalState NewState);
+void ADC_DMACtrl(ADC_Type* ADCx, FunctionalState NewState);
 #ifdef __cplusplus
 }
 #endif

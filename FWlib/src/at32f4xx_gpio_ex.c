@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_gpio_ex.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx GPIO extended source file
   **************************************************************************
   */
@@ -176,18 +176,8 @@ void GPIO_Init(GPIO_Type* GPIOx, GPIO_InitType* GPIO_InitStruct)
         assert_param(IS_GPIO_MAXSPEED(GPIO_InitStruct->GPIO_MaxSpeed));
 
         /* Speed mode configuration */
-        if(GPIO_InitStruct->GPIO_MaxSpeed < GPIO_MaxSpeed_50MHz)
-        {
-          GPIOx->HDRV &= ~(GPIO_HDRV_HDRV0 << (pinpos));
-          GPIOx->ODRVR &= ~(GPIO_ODRVR_ODRV0 << (pinpos * 2));
-          GPIOx->ODRVR |= ((uint32_t)(GPIO_InitStruct->GPIO_MaxSpeed) << (pinpos * 2));
-        }
-        else
-        {
-          GPIOx->HDRV &= ~(GPIO_HDRV_HDRV0 << (pinpos));
-          GPIOx->ODRVR &= ~(GPIO_ODRVR_ODRV0 << (pinpos * 2));
-          GPIOx->HDRV |= ((uint32_t)GPIO_HDRV_HDRV0 << (pinpos));
-        }
+        GPIOx->ODRVR &= ~(GPIO_ODRVR_ODRV0 << (pinpos * 2));
+        GPIOx->ODRVR |= ((uint32_t)(GPIO_InitStruct->GPIO_MaxSpeed) << (pinpos * 2));
 
         /* Output mode configuration */
         GPIOx->OTYPER &= ~((GPIO_OTYPER_OT_0) << ((uint16_t)pinpos));
@@ -402,21 +392,63 @@ void GPIO_PinsLockConfig(GPIO_Type* GPIOx, uint16_t GPIO_Pin)
 }
 
 /**
+  * @brief  Enables or disables to enhance slew rate of GPIO Pins.
+  * @param  GPIOx: where x can be (A..G) to select the GPIO peripheral.
+  * @param  GPIO_Pin: specifies the port bit to be written.
+  *   This parameter can be any combination of GPIO_Pin_x where x can be (0..15).
+  * @param  NewState: new state of the slew rate.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void GPIO_PinsEnhanceSlewRate(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
+  assert_param(IS_GPIO_PINS(GPIO_Pin));
+  if( ENABLE == NewState ){
+      GPIOx->SRCTR |= GPIO_Pin;
+  }else{
+      GPIOx->SRCTR &= ~GPIO_Pin;
+  }
+}
+
+/**
+  * @brief  Enables or disables GPIO Pins huge driven.
+  * @param  GPIOx: where x can be (A..G) to select the GPIO peripheral.
+  * @param  GPIO_Pin: specifies the port bit to be written.
+  *   This parameter can be any combination of GPIO_Pin_x where x can be (0..15).
+  * @param  NewState: new state of the slew rate.
+  *   This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void GPIO_PinsHugeDriven(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_GPIO_ALL_PERIPH(GPIOx));
+  assert_param(IS_GPIO_PINS(GPIO_Pin));
+  if( ENABLE == NewState ){
+      GPIOx->HDRV |= GPIO_Pin;
+  }else{
+      GPIOx->HDRV &= ~GPIO_Pin;
+  }
+}
+
+/**
   * @brief  Writes data to the specified GPIO data port.
   * @param  GPIOx: where x can be (A or B) to select the GPIO peripheral.
   * @param  GPIO_PinSource: specifies the pin for the Alternate function.
   *          This parameter can be GPIO_PinSourcex where x can be (0..15).
   * @param  GPIO_AF: selects the pin to used as Alternate function.
   *          This parameter can be one of the following value:
-  *            @arg GPIO_AF_0: WKUP, EVENTOUT, TIM15, SPI1, TIM17,MCO, SWDAT, SWCLK, TIM14,
-  *                            BOOT,USART1, CEC, IR_OUT, SPI2 
-  *            @arg GPIO_AF_1: USART2, CEC, Tim3, USART1, USART2,EVENTOUT, I2C1, I2C2, TIM15 
-  *            @arg GPIO_AF_2: TIM2, TIM1, EVENTOUT, TIM16, TIM17
-  *            @arg GPIO_AF_3: TS, I2C1, TIM15, EVENTOUT 
-  *            @arg GPIO_AF_4: TIM14
-  *            @arg GPIO_AF_5: TIM16, TIM17
-  *            @arg GPIO_AF_6: EVENTOUT
-  *            @arg GPIO_AF_7: COMP1 OUT, COMP2 OUT 
+  *            @arg GPIO_AF_0: EVENTOUT, TIM15, SPI1, TIM17, MCO, SWDAT, SWCLK, TIM14,
+  *                            USART1, IR_OUT, SPI2 
+  *            @arg GPIO_AF_1: USART2, TMR3, USART1, USART2, EVENTOUT, I2C1, I2C2, TMR15, IR_OUT 
+  *            @arg GPIO_AF_2: TMR2, TMR1, EVENTOUT, TMR16, TMR17
+  *            @arg GPIO_AF_3: USART2, I2C1, TMR15, EVENTOUT 
+  *            @arg GPIO_AF_4: I2C2, TMR14, USART2, I2C1
+  *            @arg GPIO_AF_5: TMR1, TMR15, TMR16, TMR17, I2C2, MCO
+  *            @arg GPIO_AF_6: EVENTOUT, SPI2
+  *            @arg GPIO_AF_7: COMP1 OUT, COMP2 OUT, I2C2, SPI2
   * @note   The pin should already been configured in Alternate Function mode(AF)
   *         using GPIO_InitStruct->GPIO_Mode = GPIO_Mode_AF
   * @note   Refer to the Alternate function mapping table in the device datasheet 

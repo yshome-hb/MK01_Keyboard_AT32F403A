@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx peripheral access layer header file
   **************************************************************************
   */
@@ -261,7 +261,7 @@ extern "C" {
         can define the HSE value in your toolchain compiler preprocessor.
   */
 #if !defined  HSE_VALUE
-#define HSE_VALUE               ((uint32_t)12000000) /*!< Value of the External oscillator in Hz */
+#define HSE_VALUE               ((uint32_t)8000000) /*!< Value of the External oscillator in Hz */
 #endif /* HSE_VALUE */
 
 
@@ -1815,12 +1815,12 @@ typedef struct
     __IO uint32_t ADDR2;
     uint32_t RESERVED3[7];
 #if defined (AT32F415xx) || defined (AT32F421xx)
-    __IO uint32_t SLIB_CDR0;
-    __IO uint32_t SLIB_CDR1;
+    __IO uint32_t SLIB_STS0;
+    __IO uint32_t SLIB_STS1;
     __IO uint32_t SLIB_PSW;
     __IO uint32_t SLIB_PSW_STS;
     __IO uint32_t CRC_AR;
-    __IO uint32_t CRC_CR;
+    __IO uint32_t CRC_CTRL;
     __IO uint32_t CRC_OUTR;
     uint32_t RESERVED4[3];
 #else
@@ -1836,8 +1836,8 @@ typedef struct
 #if defined (AT32F415xx) || defined (AT32F421xx)
     uint32_t RESERVED7[6];
 #else
-    __IO uint32_t SLIB_CDR0;
-    __IO uint32_t SLIB_CDR1;
+    __IO uint32_t SLIB_STS0;
+    __IO uint32_t SLIB_STS1;
     __IO uint32_t SLIB_PSW;
     __IO uint32_t SLIB_PSW_STS;
     __IO uint32_t SLIB_SET_PSW;
@@ -1848,7 +1848,7 @@ typedef struct
     uint32_t RESERVED9[3];
 #else
     __IO uint32_t SLIB_KEYR;
-    __IO uint32_t CRC_DR;
+    __IO uint32_t CRC_CTRL;
     __IO uint32_t CRC_OUTR;
 #endif
 #if defined (AT32F415xx) || defined (AT32F421xx)
@@ -9843,14 +9843,13 @@ typedef struct
 #define  USART_CTRL1_IDLEIEN                    ((uint16_t)0x0010)            /*!< IDLE Interrupt Enable */
 #define  USART_CTRL1_RDNEIEN                    ((uint16_t)0x0020)            /*!< RXNE Interrupt Enable */
 #define  USART_CTRL1_TRACIEN                    ((uint16_t)0x0040)            /*!< Transmission Complete Interrupt Enable */
-#define  USART_CTRL1_TDEIEN                     ((uint16_t)0x0080)            /*!< PE Interrupt Enable */
+#define  USART_CTRL1_TDEIEN                     ((uint16_t)0x0080)            /*!< Transmit data register empty Interrupt Enable */
 #define  USART_CTRL1_PERRIEN                    ((uint16_t)0x0100)            /*!< PE Interrupt Enable */
 #define  USART_CTRL1_PSEL                       ((uint16_t)0x0200)            /*!< Parity Selection */
 #define  USART_CTRL1_PCEN                       ((uint16_t)0x0400)            /*!< Parity Control Enable */
 #define  USART_CTRL1_WUMODE                     ((uint16_t)0x0800)            /*!< Wakeup method */
 #define  USART_CTRL1_LEN                        ((uint16_t)0x1000)            /*!< Word length */
 #define  USART_CTRL1_UEN                        ((uint16_t)0x2000)            /*!< USART Enable */
-#define  USART_CTRL1_OVER8                      ((uint16_t)0x8000)            /*!< USART Oversmapling 8-bits */
 
 /******************  Bit definition for USART_CTRL2 register  *******************/
 #define  USART_CTRL2_ADDR                       ((uint16_t)0x000F)            /*!< Address of the USART node */
@@ -10031,12 +10030,12 @@ typedef struct
 /******************  Bit definition for FLASH_WRPRT register  ******************/
 #define  FLASH_WRPRT_WRPRTBMP                   ((uint32_t)0xFFFFFFFF)        /*!< Write Protect */
 
-/******************  Bit definition for FSLIB_CDR0 register  ******************/
-#define  FLASH_SLIB_CDR0_BOOT_DIS               ((uint8_t)0x01)               /*!< Boot mode disable in System Memory */
-#define  FLASH_SLIB_CDR0_SYS_SLIB_EN            ((uint8_t)0x04)               /*!< SLIB code enable in System Memory */
-#define  FLASH_SLIB_CDR0_SLIB_EN                ((uint8_t)0x08)               /*!< SLIB code enable in Flash */
+/******************  Bit definition for FSLIB_STS0 register  ******************/
+#define  FLASH_SLIB_STS0_BOOT_DIS               ((uint8_t)0x01)               /*!< Boot mode disable in System Memory */
+#define  FLASH_SLIB_STS0_SYS_SLIB_EN            ((uint8_t)0x04)               /*!< SLIB code enable in System Memory */
+#define  FLASH_SLIB_STS0_SLIB_EN                ((uint8_t)0x08)               /*!< SLIB code enable in Flash */
 
-/******************  Bit definition for FSLIB_CDR1 register  ******************/
+/******************  Bit definition for FSLIB_STS1 register  ******************/
 #define  FLASH_SLIB_START_PAGE                  ((uint32_t)0x000007FF)        /*!< SLIB Start Page */
 #define  FLASH_SLIB_DATA_START_PAGE             ((uint32_t)0x003FF800)        /*!< SLIB Data Start Page */
 #define  FLASH_SLIB_INSTR_PAGE                  ((uint32_t)0x003FF800)        /*!< SLIB Instruction Start Page */

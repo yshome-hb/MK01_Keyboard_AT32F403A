@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_pwr.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx PWR header file
   **************************************************************************
   */
@@ -129,7 +129,15 @@ extern "C" {
 /** @defgroup PWR_Exported_Functions
   * @{
   */
-
+void PWR_EnterSleepMode(uint8_t PWR_SLEEPEntry);
+#if defined (AT32F403xx) || defined (AT32F413xx)
+    void PWR_EnterSTOPMode(uint8_t PWR_STOPEntry);
+#else
+    void PWR_EnterSTOPMode(uint32_t PWR_Regulator, uint8_t PWR_STOPEntry);
+#endif
+void PWR_EnterSTANDBYMode(void);
+FlagStatus PWR_GetFlagStatus(uint32_t PWR_FLAG);
+void PWR_ClearFlag(uint32_t PWR_FLAG);
 void PWR_Reset(void);
 void PWR_BackupAccessCtrl(FunctionalState NewState);
 void PWR_PVDCtrl(FunctionalState NewState);
@@ -140,15 +148,7 @@ void PWR_WakeUpPinCtrl2(FunctionalState NewState);
 void PWR_WakeUpPinCtrl6(FunctionalState NewState);
 void PWR_WakeUpPinCtrl7(FunctionalState NewState);
 #endif
-void PWR_EnterSleepMode(uint8_t PWR_SLEEPEntry);
-#if defined (AT32F403xx) || defined (AT32F413xx)
-    void PWR_EnterSTOPMode(uint8_t PWR_STOPEntry);
-#else
-    void PWR_EnterSTOPMode(uint32_t PWR_Regulator, uint8_t PWR_STOPEntry);
-#endif
-void PWR_EnterSTANDBYMode(void);
-FlagStatus PWR_GetFlagStatus(uint32_t PWR_FLAG);
-void PWR_ClearFlag(uint32_t PWR_FLAG);
+
 
 #ifdef __cplusplus
 }

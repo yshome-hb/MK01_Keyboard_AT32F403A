@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_can.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx CAN header file
   **************************************************************************
   */
@@ -53,7 +53,7 @@ typedef struct
                                             
     uint8_t CAN_Mode;                       /*!< Specifies the CAN operating mode.
                                                This parameter can be a value of
-                                              @ref CAN_operating_mode */
+                                              @ref CAN_Mode */
                                             
     uint8_t CAN_SJW;                        /*!< Specifies the maximum number of time quanta
                                                the CAN hardware is allowed to lengthen or
@@ -630,27 +630,21 @@ typedef struct
 /** @defgroup CAN_Exported_Functions
   * @{
   */
+  
+/* Interrupts and flags management functions **********************************/
+void CAN_INTConfig(CAN_Type* CANx, uint32_t CAN_INT, FunctionalState NewState);
+FlagStatus CAN_GetFlagStatus(CAN_Type* CANx, uint32_t CAN_FLAG);
+void CAN_ClearFlag(CAN_Type* CANx, uint32_t CAN_FLAG);
+ITStatus CAN_GetINTStatus(CAN_Type* CANx, uint32_t CAN_INT);
+void CAN_ClearINTPendingBit(CAN_Type* CANx, uint32_t CAN_INT);
+
 /*  Function used to set the CAN configuration to the default reset state *****/
 void CAN_Reset(CAN_Type* CANx);
-
-/* Initialization and Configuration functions *********************************/
-uint8_t CAN_Init(CAN_Type* CANx, CAN_InitType* CAN_InitStruct);
-void CAN_FilterInit(CAN_Type* CANx, CAN_FilterInitType* CAN_FilterInitStruct);
-void CAN_StructInit(CAN_InitType* CAN_InitStruct);
-void CAN_SlaveStartBank(uint8_t CAN_BankNumber);
-void CAN_DBGFreeze(CAN_Type* CANx, FunctionalState NewState);
-void CAN_TTComModeCtrl(CAN_Type* CANx, FunctionalState NewState);
-
-/* Transmit functions *********************************************************/
-uint8_t CAN_Transmit(CAN_Type* CANx, CanTxMsg* TxMessage);
-uint8_t CAN_TransmitStatus(CAN_Type* CANx, uint8_t TransmitMailbox);
-void CAN_CancelTransmit(CAN_Type* CANx, uint8_t Mailbox);
 
 /* Receive functions **********************************************************/
 void CAN_Receive(CAN_Type* CANx, uint8_t FIFONumber, CanRxMsg* RxMessage);
 void CAN_FIFORelease(CAN_Type* CANx, uint8_t FIFONumber);
 uint8_t CAN_MessagePending(CAN_Type* CANx, uint8_t FIFONumber);
-
 
 /* Operation modes functions **************************************************/
 uint8_t CAN_OperatingModeRequest(CAN_Type* CANx, uint8_t CAN_OperatingMode);
@@ -662,12 +656,17 @@ uint8_t CAN_GetLastErrorCode(CAN_Type* CANx);
 uint8_t CAN_GetReceiveErrorCounter(CAN_Type* CANx);
 uint8_t CAN_GetLSBTransmitErrorCounter(CAN_Type* CANx);
 
-/* Interrupts and flags management functions **********************************/
-void CAN_INTConfig(CAN_Type* CANx, uint32_t CAN_INT, FunctionalState NewState);
-FlagStatus CAN_GetFlagStatus(CAN_Type* CANx, uint32_t CAN_FLAG);
-void CAN_ClearFlag(CAN_Type* CANx, uint32_t CAN_FLAG);
-ITStatus CAN_GetINTStatus(CAN_Type* CANx, uint32_t CAN_INT);
-void CAN_ClearINTPendingBit(CAN_Type* CANx, uint32_t CAN_INT);
+/* Initialization and Configuration functions *********************************/
+uint8_t CAN_Init(CAN_Type* CANx, CAN_InitType* CAN_InitStruct);
+void CAN_FilterInit(CAN_Type* CANx, CAN_FilterInitType* CAN_FilterInitStruct);
+void CAN_StructInit(CAN_InitType* CAN_InitStruct);
+void CAN_DBGFreeze(CAN_Type* CANx, FunctionalState NewState);
+void CAN_TTComModeCtrl(CAN_Type* CANx, FunctionalState NewState);
+
+/* Transmit functions *********************************************************/
+uint8_t CAN_Transmit(CAN_Type* CANx, CanTxMsg* TxMessage);
+uint8_t CAN_TransmitStatus(CAN_Type* CANx, uint8_t TransmitMailbox);
+void CAN_CancelTransmit(CAN_Type* CANx, uint8_t Mailbox);
 
 #ifdef __cplusplus
 }

@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_gpio.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx GPIO source file
   **************************************************************************
   */
@@ -614,6 +614,7 @@ void GPIO_EventOutputCmd(FunctionalState NewState)
   *     @arg AFIO_MAP6_USART1_0001       : USART1 Alternate Function mapping 
   *     @arg AFIO_MAP6_USART3_0001       : USART3 Partial Alternate Function mapping 
   *     @arg AFIO_MAP6_UART4_0001        : UART4 Alternate Function mapping 
+  *     @arg AFIO_MAP6_UART4_0010        : UART4 Alternate Function mapping 
   *     @arg AFIO_MAP7_SPIF_1000         : EXT_FLASH Alternate Function mapping  
   *     @arg AFIO_MAP7_SPIF_1001         : EXT_FLASH Alternate Function enable  
   *     @arg AFIO_MAP7_ADC1_0001         : ADC1 External Trigger Injected Conversion remapping 

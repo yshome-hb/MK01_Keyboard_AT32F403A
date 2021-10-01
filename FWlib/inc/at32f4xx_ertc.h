@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_ertc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx ERTC header file
   **************************************************************************
   */
@@ -12,6 +12,9 @@
 #ifndef __AT32F4XX_ERTC_H
 #define __AT32F4XX_ERTC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "at32f4xx.h"
@@ -766,6 +769,13 @@ typedef struct
 /*  Function used to set the ERTC configuration to the default reset state *****/
 ErrorStatus ERTC_Reset(void);
 
+/* Interrupts and flags management functions **********************************/
+void ERTC_INTConfig(uint32_t ERTC_INT, FunctionalState NewState);
+FlagStatus ERTC_GetFlagStatus(uint32_t ERTC_FLAG);
+void ERTC_ClearFlag(uint32_t ERTC_FLAG);
+ITStatus ERTC_GetINTStatus(uint32_t ERTC_INT);
+void ERTC_ClearINTPendingBINT(uint32_t ERTC_INT);
+
 /* Initialization and Configuration functions *********************************/
 ErrorStatus ERTC_Init(ERTC_InitType* ERTC_InitStruct);
 void ERTC_StructInit(ERTC_InitType* ERTC_InitStruct);
@@ -784,20 +794,6 @@ uint32_t ERTC_GetSubSecondValue(void);
 ErrorStatus ERTC_SetDateValue(uint32_t ERTC_Format, ERTC_DateType* ERTC_DateStruct);
 void ERTC_DateStructInit(ERTC_DateType* ERTC_DateStruct);
 void ERTC_GetDateValue(uint32_t ERTC_Format, ERTC_DateType* ERTC_DateStruct);
-
-/* Alarms (Alarm A and Alarm B) configuration functions  **********************/
-void ERTC_SetAlarmValue(uint32_t ERTC_Format, uint32_t ERTC_Alarm, ERTC_AlarmType* ERTC_AlarmStruct);
-void ERTC_AlarmStructInit(ERTC_AlarmType* ERTC_AlarmStruct);
-void ERTC_GetAlarmValue(uint32_t ERTC_Format, uint32_t ERTC_Alarm, ERTC_AlarmType* ERTC_AlarmStruct);
-ErrorStatus ERTC_AlarmCmd(uint32_t ERTC_Alarm, FunctionalState NewState);
-void ERTC_AlarmSubSecondConfig(uint32_t ERTC_Alarm, uint32_t ERTC_AlarmSubSecondValue, uint32_t ERTC_AlarmSubSecondMask);
-uint32_t ERTC_GetAlarmSubSecond(uint32_t ERTC_Alarm);
-
-/* WakeUp Timer configuration functions ***************************************/
-void ERTC_WakeUpClockConfig(uint32_t ERTC_WakeUpClock);
-void ERTC_SetWakeUpCounter(uint32_t ERTC_WakeUpCounter);
-uint32_t ERTC_GetWakeUpCounter(void);
-ErrorStatus ERTC_WakeUpCmd(FunctionalState NewState);
 
 /* Daylight Saving configuration functions ************************************/
 void ERTC_DayLightSavingConfig(uint32_t ERTC_DayLightSaving, uint32_t ERTC_StoreOperation);
@@ -843,12 +839,19 @@ void ERTC_OutputTypeConfig(uint32_t ERTC_OutputType);
 /* RTC_Shift_control_synchonisation_functions *********************************/
 ErrorStatus ERTC_SynchroShiftConfig(uint32_t ERTC_ShiftAdd1S, uint32_t ERTC_ShiftSubFS);
 
-/* Interrupts and flags management functions **********************************/
-void ERTC_INTConfig(uint32_t ERTC_INT, FunctionalState NewState);
-FlagStatus ERTC_GetFlagStatus(uint32_t ERTC_FLAG);
-void ERTC_ClearFlag(uint32_t ERTC_FLAG);
-ITStatus ERTC_GetINTStatus(uint32_t ERTC_INT);
-void ERTC_ClearINTPendingBINT(uint32_t ERTC_INT);
+/* Alarms (Alarm A and Alarm B) configuration functions  **********************/
+void ERTC_SetAlarmValue(uint32_t ERTC_Format, uint32_t ERTC_Alarm, ERTC_AlarmType* ERTC_AlarmStruct);
+void ERTC_AlarmStructInit(ERTC_AlarmType* ERTC_AlarmStruct);
+void ERTC_GetAlarmValue(uint32_t ERTC_Format, uint32_t ERTC_Alarm, ERTC_AlarmType* ERTC_AlarmStruct);
+ErrorStatus ERTC_AlarmCmd(uint32_t ERTC_Alarm, FunctionalState NewState);
+void ERTC_AlarmSubSecondConfig(uint32_t ERTC_Alarm, uint32_t ERTC_AlarmSubSecondValue, uint32_t ERTC_AlarmSubSecondMask);
+uint32_t ERTC_GetAlarmSubSecond(uint32_t ERTC_Alarm);
+
+/* WakeUp Timer configuration functions ***************************************/
+void ERTC_WakeUpClockConfig(uint32_t ERTC_WakeUpClock);
+void ERTC_SetWakeUpCounter(uint32_t ERTC_WakeUpCounter);
+uint32_t ERTC_GetWakeUpCounter(void);
+ErrorStatus ERTC_WakeUpCmd(FunctionalState NewState);
 
 #ifdef __cplusplus
 }

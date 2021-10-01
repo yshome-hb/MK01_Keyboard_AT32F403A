@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_xmc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx XMC header file
   **************************************************************************
   */
@@ -697,7 +697,19 @@ typedef struct
 /** @defgroup XMC_Exported_Functions
   * @{
   */
-  
+void XMC_NANDCmd(uint32_t XMC_Bank, FunctionalState NewState);
+void XMC_PCCARDCmd(FunctionalState NewState);
+void XMC_NANDECCCmd(uint32_t XMC_Bank, FunctionalState NewState);
+uint32_t XMC_GetECC(uint32_t XMC_Bank);
+void XMC_INTConfig(uint32_t XMC_Bank, uint32_t XMC_INT, FunctionalState NewState);
+FlagStatus XMC_GetFlagStatus(uint32_t XMC_Bank, uint32_t XMC_FLAG);
+void XMC_NORSRAMStructInit(XMC_NORSRAMInitType* XMC_NORSRAMInitStruct);
+void XMC_NANDStructInit(XMC_NANDInitType* XMC_NANDInitStruct);
+void XMC_PCCARDStructInit(XMC_PCCARDInitType* XMC_PCCARDInitStruct);
+void XMC_NORSRAMCmd(uint32_t XMC_Bank, FunctionalState NewState);
+void XMC_ClearFlag(uint32_t XMC_Bank, uint32_t XMC_FLAG);
+ITStatus XMC_GetINTStatus(uint32_t XMC_Bank, uint32_t XMC_INT);
+void XMC_ClearINTPendingBit(uint32_t XMC_Bank, uint32_t XMC_INT);  
 void XMC_ExtTimingConfig(uint32_t XMC_SubBank, uint8_t W2W_Timing, uint8_t R2R_Timing);
 void XMC_NORSRAMReset(uint32_t XMC_Bank);
 void XMC_NANDReset(uint32_t XMC_Bank);
@@ -705,19 +717,6 @@ void XMC_PCCARDReset(void);
 void XMC_NORSRAMInit(XMC_NORSRAMInitType* XMC_NORSRAMInitStruct);
 void XMC_NANDInit(XMC_NANDInitType* XMC_NANDInitStruct);
 void XMC_PCCARDInit(XMC_PCCARDInitType* XMC_PCCARDInitStruct);
-void XMC_NORSRAMStructInit(XMC_NORSRAMInitType* XMC_NORSRAMInitStruct);
-void XMC_NANDStructInit(XMC_NANDInitType* XMC_NANDInitStruct);
-void XMC_PCCARDStructInit(XMC_PCCARDInitType* XMC_PCCARDInitStruct);
-void XMC_NORSRAMCmd(uint32_t XMC_Bank, FunctionalState NewState);
-void XMC_NANDCmd(uint32_t XMC_Bank, FunctionalState NewState);
-void XMC_PCCARDCmd(FunctionalState NewState);
-void XMC_NANDECCCmd(uint32_t XMC_Bank, FunctionalState NewState);
-uint32_t XMC_GetECC(uint32_t XMC_Bank);
-void XMC_INTConfig(uint32_t XMC_Bank, uint32_t XMC_INT, FunctionalState NewState);
-FlagStatus XMC_GetFlagStatus(uint32_t XMC_Bank, uint32_t XMC_FLAG);
-void XMC_ClearFlag(uint32_t XMC_Bank, uint32_t XMC_FLAG);
-ITStatus XMC_GetINTStatus(uint32_t XMC_Bank, uint32_t XMC_INT);
-void XMC_ClearINTPendingBit(uint32_t XMC_Bank, uint32_t XMC_INT);
 
 #ifdef __cplusplus
 }

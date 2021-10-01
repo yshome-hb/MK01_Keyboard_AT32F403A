@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_eth.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx ETH source file
   **************************************************************************
   */
@@ -239,7 +239,7 @@ uint32_t ETH_Init(ETH_InitType* ETH_InitStruct, uint16_t PHYAddress)
   while (1) /*Wait Reset Complete*/
   {
     timeout++;
-    if ( (ETH_ReadPHYRegister(PHYAddress, PHY_BSR) & PHY_Reset) == 0 ) {
+    if ( (ETH_ReadPHYRegister(PHYAddress, PHY_BCR) & PHY_Reset) == 0 ) {
       break;
     }
     _eth_delay_(PHY_ResetDelay);

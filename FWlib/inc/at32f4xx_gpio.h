@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_gpio.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx GPIO header file
   **************************************************************************
   */
@@ -502,54 +502,6 @@ typedef enum
 
 #define IS_GREMAP(REMAP)            ((REMAP) > 0x80000000)
 
-#define IS_GPIO_GREMAP(REMAP)        (((REMAP) == AFIO_MAP3_TMR9_0010)    || ((REMAP) == AFIO_MAP3_TMR10_0010)    || \
-                                     ((REMAP) == AFIO_MAP3_TMR11_0010)    || ((REMAP) == AFIO_MAP4_TMR1_0001)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_0001)     || ((REMAP) == AFIO_MAP6_CAN1_0010)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_0010)     || ((REMAP) == AFIO_MAP6_CAN2_0001)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_0011)     || ((REMAP) == AFIO_MAP6_SDIO_0100)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR3_0010)     || ((REMAP) == AFIO_MAP6_SDIO_0101)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR3_0011)     || ((REMAP) == AFIO_MAP6_SDIO_0110)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR5_0001)     || ((REMAP) == AFIO_MAP6_SDIO_0111)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR5_1000)     || ((REMAP) == AFIO_MAP6_USART1_0001)   || \
-                                     ((REMAP) == AFIO_MAP4_TMR5_1001)     || ((REMAP) == AFIO_MAP6_USART3_0001)   || \
-                                     ((REMAP) == AFIO_MAP5_I2C1_0001)     || ((REMAP) == AFIO_MAP6_UART4_0001)    || \
-                                     ((REMAP) == AFIO_MAP5_I2C1_0011)     || ((REMAP) == AFIO_MAP7_SPIF_1000)     || \
-                                     ((REMAP) == AFIO_MAP5_I2C2_0001)     || ((REMAP) == AFIO_MAP7_SPIF_1001)     || \
-                                     ((REMAP) == AFIO_MAP5_I2C2_0010)     || ((REMAP) == AFIO_MAP7_ADC1_0001)     || \
-                                     ((REMAP) == AFIO_MAP5_I2C2_0011)     || ((REMAP) == AFIO_MAP7_ADC1_0010)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI1_0001)     || ((REMAP) == AFIO_MAP7_ADC2_0001)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI2_0001)     || ((REMAP) == AFIO_MAP7_ADC2_0010)     || \
-                                     ((REMAP) == AFIO_MAP7_SWJTAG_0010)   || ((REMAP) == AFIO_MAP7_SWJTAG_0001)   || \
-                                     ((REMAP) == AFIO_MAP7_SWJTAG_0100)   || ((REMAP) == AFIO_MAP7_PD01_0001)     || \
-                                     ((REMAP) == AFIO_MAP8_TMR1_BK1_00)   || ((REMAP) == AFIO_MAP8_TMR1_BK1_10)   || \
-                                     ((REMAP) == AFIO_MAP8_TMR1_BK1_11)   || ((REMAP) == AFIO_MAP8_TMR1_CH1_00)   || \
-                                     ((REMAP) == AFIO_MAP8_TMR1_CH1_10)   || ((REMAP) == AFIO_MAP8_TMR1_CH1_11)   || \
-                                     ((REMAP) == AFIO_MAP8_TMR2_CH4_00)   || ((REMAP) == AFIO_MAP8_TMR2_CH4_10)   || \
-                                     ((REMAP) == AFIO_MAP8_TMR2_CH4_11)   || ((REMAP) == AFIO_MAP8_TMR3_CH1_00)   || \
-                                     ((REMAP) == AFIO_MAP8_TMR3_CH1_10)   || ((REMAP) == AFIO_MAP8_TMR3_CH1_11)   || \
-                                     ((REMAP) == AFIO_MAP4_TMR1_0011)     || ((REMAP) == AFIO_MAP4_TMR4_0001)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_1001)     || ((REMAP) == AFIO_MAP4_TMR2_1010)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_1011)     || ((REMAP) == AFIO_MAP4_TMR2_1101)     || \
-                                     ((REMAP) == AFIO_MAP4_TMR2_1110)     || ((REMAP) == AFIO_MAP4_TMR2_1111)     || \
-                                     ((REMAP) == AFIO_MAP5_USART5_0001)   || ((REMAP) == AFIO_MAP5_I2C3_0001)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI1_0010)     || ((REMAP) == AFIO_MAP5_SPI1_0011)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI2_0010)     || ((REMAP) == AFIO_MAP5_SPI3_0001)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI3_0010)     || ((REMAP) == AFIO_MAP5_SPI3_0011)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI4_0001)     || ((REMAP) == AFIO_MAP5_SPI4_0010)     || \
-                                     ((REMAP) == AFIO_MAP5_SPI4_0011)     || ((REMAP) == AFIO_MAP6_CAN1_0011)     || \
-                                     ((REMAP) == AFIO_MAP6_SDIO2_0001)    || ((REMAP) == AFIO_MAP6_SDIO2_0010)    || \
-                                     ((REMAP) == AFIO_MAP6_SDIO2_0011)    || ((REMAP) == AFIO_MAP6_USART2_0001)   || \
-                                     ((REMAP) == AFIO_MAP6_USART3_0011)   || ((REMAP) == AFIO_MAP7_ADC1_0011)     || \
-                                     ((REMAP) == AFIO_MAP7_ADC2_0011)     || ((REMAP) == AFIO_MAP7_XMC_0001)      || \
-                                     ((REMAP) == AFIO_MAP7_XMC_0010)      || ((REMAP) == AFIO_MAP7_XMC_1001)      || \
-                                     ((REMAP) == AFIO_MAP7_XMC_1010)      || ((REMAP) == AFIO_MAP8_ETH_0001)      || \
-                                     ((REMAP) == AFIO_MAP8_ETH_0100)      || ((REMAP) == AFIO_MAP8_ETH_0101)      || \
-                                     ((REMAP) == AFIO_MAP8_ETH_1000)      || ((REMAP) == AFIO_MAP8_ETH_1001)      || \
-                                     ((REMAP) == AFIO_MAP8_ETH_1100)      || ((REMAP) == AFIO_MAP8_ETH_1101)      || \
-                                     ((REMAP) == AFIO_MAP8_USART6_0001)   || ((REMAP) == AFIO_MAP8_UART7_0001)    || \
-                                     ((REMAP) == AFIO_MAP8_UART8_0001)    || ((REMAP) == AFIO_MAP4_TIM2ITR1_1000) || \
-                                     ((REMAP) == AFIO_MAP4_TIM2ITR1_1100) || ((REMAP) == AFIO_MAP7_XMC_1000))
-                                     
 /**
   * @}
   */ 
@@ -650,16 +602,14 @@ typedef enum
 /** @defgroup GPIO_Exported_Functions
   * @{
   */
-
+void GPIO_EventOutputConfig(uint8_t GPIO_PortSource, uint8_t GPIO_PinSource);
+void GPIO_EventOutputCmd(FunctionalState NewState);
+void GPIO_PinsRemapConfig(uint32_t GPIO_Remap, FunctionalState NewState);
+void GPIO_EXTILineConfig(uint8_t GPIO_PortSource, uint8_t GPIO_PinSource);
+void GPIO_ETH_MediaInterfaceConfig(uint32_t GPIO_ETH_MediaInterface);
 void GPIO_Reset(GPIO_Type* GPIOx);
 void GPIO_AFIOReset(void);
 void GPIO_Init(GPIO_Type* GPIOx, GPIO_InitType* GPIO_InitStruct);
-void GPIO_StructInit(GPIO_InitType* GPIO_InitStruct);
-uint8_t GPIO_ReadInputDataBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
-uint16_t GPIO_ReadInputData(GPIO_Type* GPIOx);
-uint8_t GPIO_ReadOutputDataBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
-uint16_t GPIO_ReadOutputData(GPIO_Type* GPIOx);
-void GPIO_SetBits(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
 void GPIO_ResetBits(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
 void GPIO_WriteBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin, BitState BitVal);
 void GPIO_Write(GPIO_Type* GPIOx, uint16_t PortVal);
@@ -668,11 +618,12 @@ void GPIO_PinsLockConfig(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
 void GPIO_PinsEnhanceSlewRate(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState);
 void GPIO_PinsHugeDriven(GPIO_Type* GPIOx, uint16_t GPIO_Pin, FunctionalState NewState);
 #endif
-void GPIO_EventOutputConfig(uint8_t GPIO_PortSource, uint8_t GPIO_PinSource);
-void GPIO_EventOutputCmd(FunctionalState NewState);
-void GPIO_PinsRemapConfig(uint32_t GPIO_Remap, FunctionalState NewState);
-void GPIO_EXTILineConfig(uint8_t GPIO_PortSource, uint8_t GPIO_PinSource);
-void GPIO_ETH_MediaInterfaceConfig(uint32_t GPIO_ETH_MediaInterface);
+void GPIO_StructInit(GPIO_InitType* GPIO_InitStruct);
+uint8_t GPIO_ReadInputDataBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
+uint16_t GPIO_ReadInputData(GPIO_Type* GPIOx);
+uint8_t GPIO_ReadOutputDataBit(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
+uint16_t GPIO_ReadOutputData(GPIO_Type* GPIOx);
+void GPIO_SetBits(GPIO_Type* GPIOx, uint16_t GPIO_Pin);
 
 #endif /* AT32F403xx || AT32F413xx || AT32F415xx
           AT32F403Axx|| AT32F407xx */

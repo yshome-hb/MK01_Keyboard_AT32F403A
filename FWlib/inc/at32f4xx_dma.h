@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_dma.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx DMA header file
   **************************************************************************
   */
@@ -587,19 +587,20 @@ typedef struct
 /** @defgroup DMA_Exported_Functions
   * @{
   */
-
-void DMA_Reset(DMA_Channel_Type* DMAy_Channelx);
-void DMA_Init(DMA_Channel_Type* DMAy_Channelx, DMA_InitType* DMA_InitStruct);
-void DMA_DefaultInitParaConfig(DMA_InitType* DMA_InitStruct);
-void DMA_ChannelEnable(DMA_Channel_Type* DMAy_Channelx, FunctionalState NewState);
-void DMA_INTConfig(DMA_Channel_Type* DMAy_Channelx, uint32_t DMA_INT, FunctionalState NewState);
-void DMA_SetCurrDataCounter(DMA_Channel_Type* DMAy_Channelx, uint16_t DataNumber);
-uint16_t DMA_GetCurrDataCounter(DMA_Channel_Type* DMAy_Channelx);
-FlagStatus DMA_GetFlagStatus(uint32_t DMAy_FLAG);
-void DMA_ClearFlag(uint32_t DMAy_FLAG);
 ITStatus DMA_GetITStatus(uint32_t DMAy_INT);
 void DMA_ClearITPendingBit(uint32_t DMAy_INT);
 void DMA_Flexible_Config(DMA_Type *DMAx,uint8_t Flex_Channelx,uint8_t Hardware_ID);
+uint16_t DMA_GetCurrDataCounter(DMA_Channel_Type* DMAy_Channelx);
+FlagStatus DMA_GetFlagStatus(uint32_t DMAy_FLAG);
+void DMA_ClearFlag(uint32_t DMAy_FLAG);
+void DMA_ChannelEnable(DMA_Channel_Type* DMAy_Channelx, FunctionalState NewState);
+void DMA_INTConfig(DMA_Channel_Type* DMAy_Channelx, uint32_t DMA_INT, FunctionalState NewState);
+void DMA_SetCurrDataCounter(DMA_Channel_Type* DMAy_Channelx, uint16_t DataNumber);
+void DMA_Reset(DMA_Channel_Type* DMAy_Channelx);
+void DMA_Init(DMA_Channel_Type* DMAy_Channelx, DMA_InitType* DMA_InitStruct);
+void DMA_DefaultInitParaConfig(DMA_InitType* DMA_InitStruct);
+
+
 
 #ifdef __cplusplus
 }

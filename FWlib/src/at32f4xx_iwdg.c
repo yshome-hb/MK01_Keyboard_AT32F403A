@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_iwdg.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx IWDG source file
   **************************************************************************
   */
@@ -69,6 +69,53 @@
 /** @defgroup IWDG_Private_Functions
   * @{
   */
+/**
+  * @brief  Reloads IWDG counter with value defined in the reload register
+  *   (write access to IWDG_PR and IWDG_RLR registers disabled).
+  * @param  None
+  * @retval None
+  */
+void IWDG_ReloadCounter(void)
+{
+  IWDG->KEY = KR_KEY_Reload;
+}
+
+/**
+  * @brief  Enables IWDG (write access to IWDG_PR and IWDG_RLR registers disabled).
+  * @param  None
+  * @retval None
+  */
+void IWDG_Enable(void)
+{
+  IWDG->KEY = KR_KEY_Enable;
+}
+
+/**
+  * @brief  Checks whether the specified IWDG flag is set or not.
+  * @param  IWDG_FLAG: specifies the flag to check.
+  *   This parameter can be one of the following values:
+  *     @arg IWDG_FLAG_PSCF: Prescaler Value Update on going
+  *     @arg IWDG_FLAG_RLDF: Reload Value Update on going
+  * @retval The new state of IWDG_FLAG (SET or RESET).
+  */
+FlagStatus IWDG_GetFlagStatus(uint16_t IWDG_FLAG)
+{
+  FlagStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_IWDG_FLAG(IWDG_FLAG));
+
+  if ((IWDG->STS & IWDG_FLAG) != (uint32_t)RESET)
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  /* Return the flag status */
+  return bitstatus;
+}
 
 /**
   * @brief  Enables or disables write access to IWDG_PR and IWDG_RLR registers.
@@ -118,53 +165,7 @@ void IWDG_SetReload(uint16_t Reload)
   IWDG->RLD = Reload;
 }
 
-/**
-  * @brief  Reloads IWDG counter with value defined in the reload register
-  *   (write access to IWDG_PR and IWDG_RLR registers disabled).
-  * @param  None
-  * @retval None
-  */
-void IWDG_ReloadCounter(void)
-{
-  IWDG->KEY = KR_KEY_Reload;
-}
 
-/**
-  * @brief  Enables IWDG (write access to IWDG_PR and IWDG_RLR registers disabled).
-  * @param  None
-  * @retval None
-  */
-void IWDG_Enable(void)
-{
-  IWDG->KEY = KR_KEY_Enable;
-}
-
-/**
-  * @brief  Checks whether the specified IWDG flag is set or not.
-  * @param  IWDG_FLAG: specifies the flag to check.
-  *   This parameter can be one of the following values:
-  *     @arg IWDG_FLAG_PSCF: Prescaler Value Update on going
-  *     @arg IWDG_FLAG_RLDF: Reload Value Update on going
-  * @retval The new state of IWDG_FLAG (SET or RESET).
-  */
-FlagStatus IWDG_GetFlagStatus(uint16_t IWDG_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_IWDG_FLAG(IWDG_FLAG));
-
-  if ((IWDG->STS & IWDG_FLAG) != (uint32_t)RESET)
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  /* Return the flag status */
-  return bitstatus;
-}
 
 /**
   * @}

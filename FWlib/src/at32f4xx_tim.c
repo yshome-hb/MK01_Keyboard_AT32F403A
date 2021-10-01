@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_tim.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx TTMER source file
   **************************************************************************
   */
@@ -276,13 +276,10 @@ void TMR_TimeBaseInit(TMR_Type* TMRx, TMR_TimerBaseInitType* TMR_TimeBaseInitStr
   }
 #endif
   
-#if defined AT32F403Axx || defined AT32F407xx
-if((TMRx != TMR6) && (TMRx != TMR7))
-{
+#if defined AT32F403Axx || defined AT32F407xx || defined AT32F413xx || defined AT32F415xx
   /* Set the clock division */
   tmpcr1 &= (uint16_t)(~((uint16_t)TMR_CTRL1_CLKDIV));
   tmpcr1 |= (uint32_t)TMR_TimeBaseInitStruct->TMR_ClockDivision;
-}
 #endif
   
 #ifdef AT32F421xx
@@ -2659,6 +2656,11 @@ uint16_t TMR_GetDIV(TMR_Type* TMRx)
 /**
   * @brief  Set the TMR14 remap for channel1.
   * @param  TMR14_TI1RMP: the vaule for TMR14 remap.
+  *   This parameter can be one of the following values:
+  *     @arg TMR14_CH1_TO_GPIO: TMR14 channel1 connect to GPIO
+  *     @arg TMR14_CH1_TO_RTCCLK: TMR14 channel1 connect to RTCCLK
+  *     @arg TMR14_CH1_TO_HSE_DIV_32: TMR14 channel1 connect to HSE/32
+  *     @arg TMR14_CH1_TO_MCO: TMR14 channel1 connect to MCO
   * @retval None
   */
 void TMR_14_TI1RMP(uint16_t TMR14_TI1RMP)
@@ -3059,7 +3061,7 @@ static void TI4_Config(TMR_Type* TMRx, uint16_t TMR_ICPolarity, uint16_t TMR_ICS
   else
   {
     /* Select the Polarity and set the CC4E Bit */
-    tmpccer &= (uint16_t)~((uint16_t)(TMR_CCE_C3P | TMR_CCE_C4NP));
+    tmpccer &= (uint16_t)~((uint16_t)(TMR_CCE_C4P | TMR_CCE_C4NP));
     tmpccer |= (uint16_t)(tmp | (uint16_t)TMR_CCE_C4EN);
   }
 

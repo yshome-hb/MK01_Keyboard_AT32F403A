@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * File   : system_at32f4xx.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : CMSIS Cortex-M4 system source file
   ******************************************************************************
   */ 
@@ -125,7 +125,7 @@
 /* #define SYSCLK_FREQ_224MHz       224000000 */
 #define SYSCLK_FREQ_240MHz       240000000
 /* #define SYSCLK_FREQ_224MHz_HSI   224000000 */
- #define SYSCLK_FREQ_240MHz_HSI   240000000 
+/* #define SYSCLK_FREQ_240MHz_HSI   240000000 */
 #endif
 
 /*!< Uncomment the following line if you need to use external SRAM mounted

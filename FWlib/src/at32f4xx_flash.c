@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_flash.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx FMC source file
   **************************************************************************
   */
@@ -65,17 +65,12 @@
 #define SLIB_UNLOCK_KEY             ((uint32_t)0xA35F6D24)
 
 /* FLASH BANK address */
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+
 #define FLASH_BNK1_SIZE             ((uint32_t)0x80000)
 #define FLASH_BNK1_END_ADDR         ((uint32_t)0x807FFFF)
-#else
-#define FLASH_BNK1_SIZE             ((*((uint32_t*)0x1FFFF7E0)) * 1024)
-#define FLASH_BNK1_END_ADDR         (((uint32_t)0x8000000) + FLASH_BNK1_SIZE - 1)
-#endif
 #define FLASH_BNK2_END_ADDR         ((uint32_t)0x80FFFFF)
 #define FLASH_BNK3_START_ADDR       ((uint32_t)0x8400000)
+
 #if defined (AT32F415xx)
 #define FLASH_SYSMEM_START_ADDR     ((uint32_t)0x1FFFAC00)
 #define FLASH_SYSMEM_END_ADDR       ((uint32_t)0x1FFFF3FF)
@@ -87,9 +82,9 @@
 
 /* Delay definition */
 #define ERS_TIMEOUT                 ((uint32_t)0x10000000)
-#define PRGM_TIMEOUT                ((uint32_t)0x0000F000)
+#define PRGM_TIMEOUT                ((uint32_t)0x00100000)
 #define EXT_FLASH_ERS_TIMEOUT       ((uint32_t)0xFFFFFFFF)
-#define EXT_FLASH_PRGM_TIMEOUT      ((uint32_t)0x00080000)
+#define EXT_FLASH_PRGM_TIMEOUT      ((uint32_t)0x00100000)
 /**
   * @}
   */
@@ -97,11 +92,11 @@
 /** @defgroup FLASH_Private_Macros
   * @{
   */
-#define IS_SYS_BOOTLOADER()       ((FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_BOOT_DIS) == 0x0)
+#define IS_SYS_BOOTLOADER()       ((FLASH->SLIB_STS0 & FLASH_SLIB_STS0_BOOT_DIS) == 0x0)
 #define IS_RDP_DISABLE()          (FLASH_GetReadProtectStatus() == RESET)
                                     
-#define IS_MAIN_SLIB()             ((FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_SLIB_EN)? 1:0)
-#define IS_SYS_SLIB()             ((FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_SYS_SLIB_EN)? TRUE:FALSE)
+#define IS_MAIN_SLIB()             ((FLASH->SLIB_STS0 & FLASH_SLIB_STS0_SLIB_EN)? 1:0)
+#define IS_SYS_SLIB()             ((FLASH->SLIB_STS0 & FLASH_SLIB_STS0_SYS_SLIB_EN)? TRUE:FALSE)
 #define IS_SLIB_DISABLE()          (IS_MAIN_SLIB()? 0:1)
 /**
   * @}
@@ -126,100 +121,330 @@
 /** @defgroup FLASH_Private_Functions
   * @{
   */
+/**
+  * @brief  Waits for a Flash process to complete or a TIMEOUT to occur.
+  * @note   This function can be used for all at32f4xx devices,
+  *         it is equivalent to FLASH_WaitForBank1Process.
+  *         - For AT32F4xx XL-Density devices this function waits for a Bank1 Flash process
+  *           to complete or a TIMEOUT to occur.
+  *         - For all other devices it waits for a Flash process to complete
+  *           or a TIMEOUT to occur.
+  * @param  Timeout: FLASH programming Timeout
+  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
+  */
+FLASH_Status FLASH_WaitForProcess(uint32_t Timeout)
+{
+  FLASH_Status status = FLASH_PRC_DONE;
+
+  /* Check for the Flash Status */
+  status = FLASH_GetBank1Status();
+
+  /* Wait for a Flash process to complete or a TIMEOUT to occur */
+  while((status == FLASH_BSY) && (Timeout != 0x00))
+  {
+    status = FLASH_GetBank1Status();
+    Timeout--;
+  }
+
+  if(Timeout == 0x00 )
+  {
+    status = FLASH_TIMEOUT;
+  }
+
+  /* Return the process status */
+  return status;
+}
 
 /**
-  * @brief  Unlocks the FLASH Controller.
-  * @note   This function can be used for all at32f4xx devices.
-  *         - For AT32F4xx XL-Density devices this function unlocks Bank1 and Bank2.
-  *         - For all other devices it unlocks Bank1 and it is equivalent
-  *           to FLASH_UnlockBank1 function..
-  * @param  None
-  * @retval None
+  * @brief  Waits for a Flash process on Bank1 to complete or a TIMEOUT to occur.
+  * @note   This function can be used for all at32f4xx devices,
+  *         it is equivalent to FLASH_WaitForProcess.
+  * @param  Timeout: FLASH programming Timeout
+  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
   */
-void FLASH_Unlock(void)
+FLASH_Status FLASH_WaitForBank1Process(uint32_t Timeout)
 {
-  /* Authorize the FC of Bank1 Access */
-  FLASH->FCKEY = FLASH_KEY1;
-  FLASH->FCKEY = FLASH_KEY2;
+  FLASH_Status status = FLASH_PRC_DONE;
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
-  /* Authorize the FC of Bank2 Access */
-  FLASH->FCKEY2 = FLASH_KEY1;
-  FLASH->FCKEY2 = FLASH_KEY2;
+  /* Check for the Flash Status */
+  status = FLASH_GetBank1Status();
+
+  /* Wait for a Flash process to complete or a TIMEOUT to occur */
+  while((status == FLASH_FLAG_BNK1_BSY) && (Timeout != 0x00))
+  {
+    status = FLASH_GetBank1Status();
+    Timeout--;
+  }
+
+  if(Timeout == 0x00 )
+  {
+    status = FLASH_TIMEOUT;
+  }
+
+  /* Return the process status */
+  return status;
+}
+
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+/**
+  * @brief  Waits for a Flash process on Bank2 to complete or a TIMEOUT to occur.
+  * @note   This function can be used only for at32f4xx XL-Density devices.
+  * @param  Timeout: FLASH programming Timeout
+  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
+  */
+FLASH_Status FLASH_WaitForBank2Process(uint32_t Timeout)
+{
+  FLASH_Status status = FLASH_PRC_DONE;
+
+  /* Check for the Flash Status */
+  status = FLASH_GetBank2Status();
+
+  /* Wait for a Flash process to complete or a TIMEOUT to occur */
+  while((status == (FLASH_FLAG_BNK2_BSY & FLASH_INT_BANK2_MASK)) && (Timeout != 0x00))
+  {
+    status = FLASH_GetBank2Status();
+    Timeout--;
+  }
+
+  if(Timeout == 0x00 )
+  {
+    status = FLASH_TIMEOUT;
+  }
+
+  /* Return the process status */
+  return status;
+}
 #endif
-}
-/**
-  * @brief  Unlocks the FLASH Bank1 Controller.
-  * @note   This function can be used for all at32f4xx devices.
-  *         - For AT32F4xx XL-Density devices this function unlocks Bank1.
-  *         - For all other devices it unlocks Bank1 and it is
-  *           equivalent to FLASH_Unlock function.
-  * @param  None
-  * @retval None
-  */
-void FLASH_UnlockBank1(void)
-{
-  /* Authorize the FC of Bank1 Access */
-  FLASH->FCKEY = FLASH_KEY1;
-  FLASH->FCKEY = FLASH_KEY2;
-}
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
-  * @brief  Unlocks the FLASH Bank2 Controller.
-  * @note   This function can be used only for AT32F4xx XL-Density devices.
-  * @param  None
-  * @retval None
-  */
-void FLASH_UnlockBank2(void)
-{
-  /* Authorize the FC of Bank2 Access */
-  FLASH->FCKEY2 = FLASH_KEY1;
-  FLASH->FCKEY2 = FLASH_KEY2;
-
-}
-#endif
-
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
-/**
-  * @brief  Unlocks the FLASH Bank3 Controller for external flash.
+  * @brief  Waits for a Flash process on Bank3 to complete or a TIMEOUT to occur.
   * @note   This function can not be used for AT32F415 and AT32F421 devices.
-  * @param  None
-  * @retval None
+  * @param  Timeout: FLASH programming Timeout
+  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
   */
-void FLASH_UnlockBank3(void)
+FLASH_Status FLASH_WaitForBank3Process(uint32_t Timeout)
 {
-  /* Authorize the FC of Bank3 Access */
-  FLASH->FCKEY3 = FLASH_KEY1;
-  FLASH->FCKEY3 = FLASH_KEY2;
+  FLASH_Status status = FLASH_PRC_DONE;
+
+  /* Check for the Flash Status */
+  status = FLASH_GetBank3Status();
+
+  /* Wait for a Flash process to complete or a TIMEOUT to occur */
+  while((status == (FLASH_FLAG_BNK3_BSY & FLASH_INT_BANK3_MASK)) && (Timeout != 0x00))
+  {
+    status = FLASH_GetBank3Status();
+    Timeout--;
+  }
+
+  if(Timeout == 0x00 )
+  {
+    status = FLASH_TIMEOUT;
+  }
+
+  /* Return the process status */
+  return status;
+}
+#endif
+
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+/**
+  * @brief To set the end address of encrypted data in BANK3.
+  *        When the address is larger than this value, the writing data will be
+  *        directly written to BANK3 without encryption.
+  * @note  This function can not be used for AT32F415 and AT32F421 devices.
+  * @param EndAddress: The end address of encrypted data in BANK3
+  * @retval: None
+  */
+void FLASH_Bank3EncEndAddrConfig(uint32_t EndAddress)
+{
+  assert_param(IS_IN_FLASH_BANK3_RANGE(EndAddress));
+  if((UOPTB->BANK3SCRKEY[0]==0xFFFFFFFF) && (UOPTB->BANK3SCRKEY[1]==0xFFFFFFFF) && \
+     (UOPTB->BANK3SCRKEY[2]==0xFFFFFFFF) && (UOPTB->BANK3SCRKEY[3]==0xFFFFFFFF))
+    return;
+  if((UOPTB->BANK3SCRKEY[0]==0xFF00FF00) && (UOPTB->BANK3SCRKEY[1]==0xFF00FF00) && \
+     (UOPTB->BANK3SCRKEY[2]==0xFF00FF00) && (UOPTB->BANK3SCRKEY[3]==0xFF00FF00))
+    return;  
+  if((UOPTB->BANK3SCRKEY[0]==0x00FF00FF) && (UOPTB->BANK3SCRKEY[1]==0x00FF00FF) && \
+     (UOPTB->BANK3SCRKEY[2]==0x00FF00FF) && (UOPTB->BANK3SCRKEY[3]==0x00FF00FF))
+    return;
+  FLASH->DA = EndAddress;
+}
+#endif
+
+
+#if defined (AT32F421xx)
+/**
+  * @brief  Enable SLIB in Main Block
+  * @note   This function can be used for AT32F421 devices.
+  * @param  Psw: SLIB Password
+  *         StartPage:SLIB Start Page
+  *         InstrPage: SLIB instruction Start Page
+  *         EndPage:  SLIB End Page
+  *         => SLIB Range = Page#N to Page#C
+  * @retval FLASH Status: The returned value can be: FLASH_BSY, FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
+  */
+FLASH_Status FLASH_SlibMainEnable(uint32_t Psw, uint16_t StartPage, uint16_t InstrPage, uint16_t EndPage)
+{
+  uint32_t SlibRange;
+  FLASH_Status Status = FLASH_PRC_DONE;
+
+  assert_param(IS_SLIB_DISABLE());
+  assert_param((Psw != 0xFFFFFFFF)&&(Psw != 0x00000000));
+  assert_param((StartPage <= 63)); 
+  assert_param((InstrPage <= 63));
+  assert_param((EndPage <= 63));
+
+  /* Wait for last process to be completed */
+  Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+  /*check param limits*/
+  if((StartPage>InstrPage) || ((InstrPage>EndPage)&&(InstrPage!=0x7FF)) || (StartPage>EndPage))
+    return Status;
+  
+  SlibRange = ((uint32_t)InstrPage<<11&FLASH_SLIB_INSTR_PAGE) | ((uint32_t)EndPage<<22&FLASH_SLIB_END_PAGE) | ((uint32_t)StartPage&FLASH_SLIB_START_PAGE);
+
+  if(Status == FLASH_PRC_DONE)
+  {
+      /* Unlock SLIB CFG register */
+      FLASH->SLIB_KEYR = SLIB_UNLOCK_KEY;
+
+      /* Configure SLIB, set PSW and RANGE */
+      FLASH->SLIB_SET_PSW = Psw;
+      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+
+      FLASH->SLIB_SET_RANGE = SlibRange;
+      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+  }
+  return Status;
+}
+#else
+/**
+  * @brief  Enable SLIB in Main Block
+  * @note   This function can be used for all AT32F4xx devices.
+  * @param  Psw: SLIB Password
+  *         StartPage:SLIB Start Page
+  *         DataPage: SLIB data Start Page
+  *         EndPage:  SLIB End Page
+  *         => SLIB Range = Page#N to Page#C
+  * @retval FLASH Status: The returned value can be: FLASH_BSY, FLASH_PGRM_FLR,
+  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
+  */
+FLASH_Status FLASH_SlibMainEnable(uint32_t Psw, uint16_t StartPage, uint16_t DataStartPage, uint16_t EndPage)
+{
+  uint32_t SlibRange;
+  FLASH_Status Status = FLASH_PRC_DONE;
+
+  assert_param(IS_SLIB_DISABLE());
+  assert_param((Psw != 0xFFFFFFFF)&&(Psw != 0x00000000));
+  assert_param((StartPage >= 1)&&(StartPage <= 511)); 
+  assert_param((DataStartPage >= 1)&&(DataStartPage <= 511));
+  assert_param((EndPage >= 1)&&(EndPage <= 511));
+
+  /* Wait for last process to be completed */
+  Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+  /*check param limits*/
+  if((StartPage>=DataStartPage) || ((DataStartPage>EndPage)&&(DataStartPage!=0x7FF)) || (StartPage>EndPage))
+    return Status;
+  
+  SlibRange = ((uint32_t)DataStartPage<<11&FLASH_SLIB_DATA_START_PAGE) | ((uint32_t)EndPage<<22&FLASH_SLIB_END_PAGE) | ((uint32_t)StartPage&FLASH_SLIB_START_PAGE);
+
+  if(Status == FLASH_PRC_DONE)
+  {
+      /* Unlock SLIB CFG register */
+      FLASH->SLIB_KEYR = SLIB_UNLOCK_KEY;
+
+      /* Configure SLIB, set PSW and RANGE */
+      FLASH->SLIB_SET_PSW = Psw;
+      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+
+      FLASH->SLIB_SET_RANGE = SlibRange;
+      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
+  }
+  return Status;
 }
 #endif
 
 /**
-  * @brief  Locks the FLASH Controller.
-  * @note   This function can be used for all at32f4xx devices.
-  *         - For AT32F4xx XL-Density devices this function Locks Bank1 and Bank2.
-  *         - For all other devices it Locks Bank1 and it is equivalent
-  *           to FLASH_LockBank1 function.
-  * @param  None
-  * @retval None
+  * @brief  Disable SLIB when SLIB enabled
+  * @note   This function can be used for all AT32F4xx devices.
+  * @param  Psw: SLIB Password
+  * @retval SUCCESS or ERROR
   */
-void FLASH_Lock(void)
+uint32_t FLASH_SlibDisable(uint32_t Psw)
 {
-  /* Set the Lock Bit to lock the FC and the CTRL of  Bank1 */
-  FLASH->CTRL |= CTRL_LCK_Set;
+  FLASH_Status Status = FLASH_PRC_DONE;
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
-  /* Set the Lock Bit to lock the FC and the CTRL of  Bank2 */
-  FLASH->CTRL2 |= CTRL_LCK_Set;
-#endif
+  assert_param(!IS_SLIB_DISABLE());
+
+  /* Write Password to disable SLIB */
+  FLASH->SLIB_PSW = Psw;
+  Status = FLASH_WaitForProcess(ERS_TIMEOUT);
+  
+  if(Status == FLASH_PRC_DONE)
+  {
+    if(FLASH->SLIB_PSW_STS & FLASH_SLIB_PSWSTS_PSW_OK)
+      return SUCCESS;
+    else
+      return ERROR;
+  }
+  
+  return ERROR;
 }
+
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+/**
+ * @brief  Get the value of current remaining SLIB CFG count (range: 256~0)
+ * @note   This function can not be used for AT32F415 and AT32F421 devices.
+ * @param  None 
+ * @retval uint32_t
+ */
+uint32_t FLASH_GetSlibCurCnt(void)
+{
+  return ((FLASH->SLIB_PSW_STS & FLASH_SLIB_CNT) >> 16);
+}
+#endif
+
+/**
+  * @brief  Get the SLIB state
+  * @note   This function can be used for all AT32F4xx devices.
+  * @param  None
+  * @retval ENABLE or DISABLE
+  */
+uint8_t FLASH_GetSlibState(void)
+{
+  if(FLASH->SLIB_STS0&FLASH_SLIB_STS0_SLIB_EN)
+    return ENABLE;
+  else
+    return DISABLE;
+}
+
+/**
+ * @brief  Get the start page of SLIB
+ * @note   This function can be used for all AT32F4xx devices
+ * @param  None
+ * @retval uint16_t
+ */
+uint16_t FLASH_GetSlibStartPage(void)
+{
+  return (uint16_t)((FLASH->SLIB_STS1&FLASH_SLIB_SET_START_PAGE)>>0);
+}
+
+/**
+ * @brief  Get the data start page of SLIB
+ * @note   This function can be used for all AT32F4xx devices
+ * @param  None
+ * @retval uint16_t
+ */
+uint16_t FLASH_GetSlibDataStartPage(void)
+{
+  return (uint16_t)((FLASH->SLIB_STS1&FLASH_SLIB_SET_DATA_START_PAGE)>>11);
+}
+
 
 /**
   * @brief  Locks the FLASH Bank1 Controller.
@@ -236,9 +461,7 @@ void FLASH_LockBank1(void)
   FLASH->CTRL |= CTRL_LCK_Set;
 }
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Locks the FLASH Bank2 Controller.
   * @note   This function can be used only for AT32F4xx XL-Density devices.
@@ -252,7 +475,7 @@ void FLASH_LockBank2(void)
 }
 #endif
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Locks the FLASH Bank3 Controller for external flash.
   * @note   This function can not be used for AT32F415 and AT32F421 devices.
@@ -279,7 +502,7 @@ FLASH_Status FLASH_ErasePage(uint32_t Page_Address)
   /* Check the parameters */
   assert_param(IS_FLASH_ADDR(Page_Address));
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   /* BANK3 : External flash */
   if(Page_Address >= FLASH_BNK3_START_ADDR)
   {
@@ -344,9 +567,7 @@ FLASH_Status FLASH_ErasePage(uint32_t Page_Address)
       FLASH->CTRL &= CTRL_PGERS_Rst;
     }
   }
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   else if((Page_Address > FLASH_BNK1_END_ADDR)&&(Page_Address <= FLASH_BNK2_END_ADDR))
   {
     /* Wait for last process to be completed */
@@ -384,9 +605,7 @@ FLASH_Status FLASH_EraseAllPages(void)
 {
   FLASH_Status status = FLASH_PRC_DONE;
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   /* Wait for last process to be completed */
   status = FLASH_WaitForBank1Process(ERS_TIMEOUT);
 
@@ -472,9 +691,7 @@ FLASH_Status FLASH_EraseBank1AllPages(void)
   return status;
 }
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Erases all Bank2 FLASH pages.
   * @note   This function can be used only for at32f4xx XL-Density devices.
@@ -506,7 +723,7 @@ FLASH_Status FLASH_EraseBank2AllPages(void)
 }
 #endif
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Erases all Bank3 FLASH pages.
   * @note   This function can not be used for AT32F415 and AT32F421 devices.
@@ -622,7 +839,7 @@ FLASH_Status FLASH_ProgramWord(uint32_t Address, uint32_t Data)
   /* Check the parameters */
   assert_param(IS_FLASH_ADDR(Address));
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   if (Address >= FLASH_BNK3_START_ADDR)
   {
     /* Wait for last process to be completed */
@@ -681,9 +898,7 @@ FLASH_Status FLASH_ProgramWord(uint32_t Address, uint32_t Data)
       FLASH->CTRL &= CTRL_PRGM_Rst;
     }
   }
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   else if((Address > FLASH_BNK1_END_ADDR)&&(Address <= FLASH_BNK2_END_ADDR))
   {
     /* Wait for last process to be completed */
@@ -722,7 +937,7 @@ FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data)
   /* Check the parameters */
   assert_param(IS_FLASH_ADDR(Address));
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   if (Address >= FLASH_BNK3_START_ADDR)
   {
     /* Wait for last process to be completed */
@@ -779,9 +994,7 @@ FLASH_Status FLASH_ProgramHalfWord(uint32_t Address, uint16_t Data)
       FLASH->CTRL &= CTRL_PRGM_Rst;
     }
   }
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   else if((Address > FLASH_BNK1_END_ADDR)&&(Address <= FLASH_BNK2_END_ADDR))
   {
     status = FLASH_WaitForBank2Process(PRGM_TIMEOUT);
@@ -819,7 +1032,7 @@ FLASH_Status FLASH_ProgramByte(uint32_t Address, uint8_t Data)
   /* Check the parameters */
   assert_param(IS_FLASH_ADDR(Address));
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   if (Address >= FLASH_BNK3_START_ADDR)
   {
     /* This function cannot be used to program bank3 */
@@ -861,9 +1074,7 @@ FLASH_Status FLASH_ProgramByte(uint32_t Address, uint8_t Data)
       FLASH->CTRL &= CTRL_PRGM_Rst;
     }
   }
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   else if((Address > FLASH_BNK1_END_ADDR)&&(Address <= FLASH_BNK2_END_ADDR))
   {
     status = FLASH_WaitForBank2Process(PRGM_TIMEOUT);
@@ -1129,9 +1340,7 @@ FLASH_Status FLASH_UserOptionByteConfig(uint16_t UOB_IWDG, uint16_t UOB_STOP, ui
   return status;
 }
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Configures to boot from Bank1 or Bank2.
   * @note   This function can be used only for at32f403_XL density devices.
@@ -1252,9 +1461,7 @@ FlagStatus FLASH_GetReadProtectStatus(void)
   */
 void FLASH_INTConfig(uint32_t FLASH_INT, FunctionalState NewState)
 {
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   /* Check the parameters */
   assert_param(IS_FLASH_INT(FLASH_INT));
   assert_param(IS_FUNCTIONAL_STATE(NewState));
@@ -1304,7 +1511,7 @@ void FLASH_INTConfig(uint32_t FLASH_INT, FunctionalState NewState)
   assert_param(IS_FLASH_INT(FLASH_INT));
   assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   if((FLASH_INT & FLASH_INT_BANK3) != 0x0)
   {
     if(NewState != DISABLE)
@@ -1367,15 +1574,13 @@ FlagStatus FLASH_GetFlagStatus(uint32_t FLASH_FLAG)
 {
   FlagStatus bitstatus = RESET;
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   /* Check the parameters */
   assert_param(IS_FLASH_GET_FLAG(FLASH_FLAG)) ;
 
   if(FLASH_FLAG == FLASH_FLAG_UOBFLR)
   {
-    if((FLASH->UOB & FLASH_FLAG_UOBFLR) != (uint32_t)RESET)
+    if((FLASH->UOB & 0x01) != (uint32_t)RESET)
     {
       bitstatus = SET;
     }
@@ -1427,7 +1632,7 @@ FlagStatus FLASH_GetFlagStatus(uint32_t FLASH_FLAG)
 
   if(FLASH_FLAG == FLASH_FLAG_UOBFLR)
   {
-    if((FLASH->UOB & FLASH_FLAG_UOBFLR) != (uint32_t)RESET)
+    if((FLASH->UOB & 0x01) != (uint32_t)RESET)
     {
       bitstatus = SET;
     }
@@ -1438,7 +1643,7 @@ FlagStatus FLASH_GetFlagStatus(uint32_t FLASH_FLAG)
   }
   else
   {
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
     if((FLASH_FLAG & FLASH_FLAG_BANK3) != 0x0)
     {
       if((FLASH->STS3 & FLASH_FLAG) != (uint32_t)RESET)
@@ -1493,9 +1698,7 @@ FlagStatus FLASH_GetFlagStatus(uint32_t FLASH_FLAG)
   */
 void FLASH_ClearFlag(uint32_t FLASH_FLAG)
 {
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   /* Check the parameters */
   assert_param(IS_FLASH_CLEAR_FLAG(FLASH_FLAG)) ;
 
@@ -1519,7 +1722,7 @@ void FLASH_ClearFlag(uint32_t FLASH_FLAG)
   /* Check the parameters */
   assert_param(IS_FLASH_CLEAR_FLAG(FLASH_FLAG)) ;
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
   if((FLASH_FLAG & FLASH_FLAG_BANK3) != 0x0)
   {
     /* Clear the flags */
@@ -1604,9 +1807,7 @@ FLASH_Status FLASH_GetBank1Status(void)
   return flashstatus;
 }
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Returns the FLASH Bank2 Status.
   * @note   This function can be used for at32f4xx XL-Density devices.
@@ -1640,7 +1841,7 @@ FLASH_Status FLASH_GetBank2Status(void)
 }
 #endif
 
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @brief  Returns the FLASH Bank3 Status.
   * @note   This function can not be used for AT32F415 and AT32F421 devices., it is
@@ -1676,331 +1877,7 @@ FLASH_Status FLASH_GetBank3Status(void)
 }
 #endif
 
-/**
-  * @brief  Waits for a Flash process to complete or a TIMEOUT to occur.
-  * @note   This function can be used for all at32f4xx devices,
-  *         it is equivalent to FLASH_WaitForBank1Process.
-  *         - For AT32F4xx XL-Density devices this function waits for a Bank1 Flash process
-  *           to complete or a TIMEOUT to occur.
-  *         - For all other devices it waits for a Flash process to complete
-  *           or a TIMEOUT to occur.
-  * @param  Timeout: FLASH programming Timeout
-  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_WaitForProcess(uint32_t Timeout)
-{
-  FLASH_Status status = FLASH_PRC_DONE;
 
-  /* Check for the Flash Status */
-  status = FLASH_GetBank1Status();
-
-  /* Wait for a Flash process to complete or a TIMEOUT to occur */
-  while((status == FLASH_BSY) && (Timeout != 0x00))
-  {
-    status = FLASH_GetBank1Status();
-    Timeout--;
-  }
-
-  if(Timeout == 0x00 )
-  {
-    status = FLASH_TIMEOUT;
-  }
-
-  /* Return the process status */
-  return status;
-}
-
-/**
-  * @brief  Waits for a Flash process on Bank1 to complete or a TIMEOUT to occur.
-  * @note   This function can be used for all at32f4xx devices,
-  *         it is equivalent to FLASH_WaitForProcess.
-  * @param  Timeout: FLASH programming Timeout
-  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_WaitForBank1Process(uint32_t Timeout)
-{
-  FLASH_Status status = FLASH_PRC_DONE;
-
-  /* Check for the Flash Status */
-  status = FLASH_GetBank1Status();
-
-  /* Wait for a Flash process to complete or a TIMEOUT to occur */
-  while((status == FLASH_FLAG_BNK1_BSY) && (Timeout != 0x00))
-  {
-    status = FLASH_GetBank1Status();
-    Timeout--;
-  }
-
-  if(Timeout == 0x00 )
-  {
-    status = FLASH_TIMEOUT;
-  }
-
-  /* Return the process status */
-  return status;
-}
-
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
-/**
-  * @brief  Waits for a Flash process on Bank2 to complete or a TIMEOUT to occur.
-  * @note   This function can be used only for at32f4xx XL-Density devices.
-  * @param  Timeout: FLASH programming Timeout
-  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_WaitForBank2Process(uint32_t Timeout)
-{
-  FLASH_Status status = FLASH_PRC_DONE;
-
-  /* Check for the Flash Status */
-  status = FLASH_GetBank2Status();
-
-  /* Wait for a Flash process to complete or a TIMEOUT to occur */
-  while((status == (FLASH_FLAG_BNK2_BSY & FLASH_INT_BANK2_MASK)) && (Timeout != 0x00))
-  {
-    status = FLASH_GetBank2Status();
-    Timeout--;
-  }
-
-  if(Timeout == 0x00 )
-  {
-    status = FLASH_TIMEOUT;
-  }
-
-  /* Return the process status */
-  return status;
-}
-#endif
-
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
-/**
-  * @brief  Waits for a Flash process on Bank3 to complete or a TIMEOUT to occur.
-  * @note   This function can not be used for AT32F415 and AT32F421 devices.
-  * @param  Timeout: FLASH programming Timeout
-  * @retval FLASH Status: The returned value can be: FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_WaitForBank3Process(uint32_t Timeout)
-{
-  FLASH_Status status = FLASH_PRC_DONE;
-
-  /* Check for the Flash Status */
-  status = FLASH_GetBank3Status();
-
-  /* Wait for a Flash process to complete or a TIMEOUT to occur */
-  while((status == (FLASH_FLAG_BNK3_BSY & FLASH_INT_BANK3_MASK)) && (Timeout != 0x00))
-  {
-    status = FLASH_GetBank3Status();
-    Timeout--;
-  }
-
-  if(Timeout == 0x00 )
-  {
-    status = FLASH_TIMEOUT;
-  }
-
-  /* Return the process status */
-  return status;
-}
-#endif
-
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
-/**
-  * @brief To set the end address of encrypted data in BANK3.
-  *        When the address is larger than this value, the writing data will be
-  *        directly written to BANK3 without encryption.
-  * @note  This function can not be used for AT32F415 and AT32F421 devices.
-  * @param EndAddress: The end address of encrypted data in BANK3
-  * @retval: None
-  */
-void FLASH_Bank3EncEndAddrConfig(uint32_t EndAddress)
-{
-  assert_param(IS_IN_FLASH_BANK3_RANGE(EndAddress));
-  if((UOPTB->BANK3SCRKEY[0]==0xFFFFFFFF) && (UOPTB->BANK3SCRKEY[1]==0xFFFFFFFF) && \
-     (UOPTB->BANK3SCRKEY[2]==0xFFFFFFFF) && (UOPTB->BANK3SCRKEY[3]==0xFFFFFFFF))
-    return;
-  if((UOPTB->BANK3SCRKEY[0]==0xFF00FF00) && (UOPTB->BANK3SCRKEY[1]==0xFF00FF00) && \
-     (UOPTB->BANK3SCRKEY[2]==0xFF00FF00) && (UOPTB->BANK3SCRKEY[3]==0xFF00FF00))
-    return;  
-  if((UOPTB->BANK3SCRKEY[0]==0x00FF00FF) && (UOPTB->BANK3SCRKEY[1]==0x00FF00FF) && \
-     (UOPTB->BANK3SCRKEY[2]==0x00FF00FF) && (UOPTB->BANK3SCRKEY[3]==0x00FF00FF))
-    return;
-  FLASH->DA = EndAddress;
-}
-#endif
-
-
-#if defined (AT32F421xx)
-/**
-  * @brief  Enable SLIB in Main Block
-  * @note   This function can be used for AT32F421 devices.
-  * @param  Psw: SLIB Password
-  *         StartPage:SLIB Start Page
-  *         InstrPage: SLIB instruction Start Page
-  *         EndPage:  SLIB End Page
-  *         => SLIB Range = Page#N to Page#C
-  * @retval FLASH Status: The returned value can be: FLASH_BSY, FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_SlibMainEnable(uint32_t Psw, uint16_t StartPage, uint16_t InstrPage, uint16_t EndPage)
-{
-  uint32_t SlibRange;
-  FLASH_Status Status = FLASH_PRC_DONE;
-
-  assert_param(IS_SLIB_DISABLE());
-  assert_param((Psw != 0xFFFFFFFF)&&(Psw != 0x00000000));
-  assert_param((StartPage <= 63)); 
-  assert_param((InstrPage <= 63));
-  assert_param((EndPage <= 63));
-
-  /* Wait for last process to be completed */
-  Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-  /*check param limits*/
-  if((StartPage>InstrPage) || ((InstrPage>EndPage)&&(InstrPage!=0x7FF)) || (StartPage>EndPage))
-    return Status;
-  
-  SlibRange = ((uint32_t)InstrPage<<11&FLASH_SLIB_INSTR_PAGE) | ((uint32_t)EndPage<<22&FLASH_SLIB_END_PAGE) | ((uint32_t)StartPage&FLASH_SLIB_START_PAGE);
-
-  if(Status == FLASH_PRC_DONE)
-  {
-      /* Unlock SLIB CFG register */
-      FLASH->SLIB_KEYR = SLIB_UNLOCK_KEY;
-
-      /* Configure SLIB, set PSW and RANGE */
-      FLASH->SLIB_SET_PSW = Psw;
-      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-
-      FLASH->SLIB_SET_RANGE = SlibRange;
-      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-  }
-  return Status;
-}
-#else
-/**
-  * @brief  Enable SLIB in Main Block
-  * @note   This function can be used for all AT32F4xx devices.
-  * @param  Psw: SLIB Password
-  *         StartPage:SLIB Start Page
-  *         DataPage: SLIB data Start Page
-  *         EndPage:  SLIB End Page
-  *         => SLIB Range = Page#N to Page#C
-  * @retval FLASH Status: The returned value can be: FLASH_BSY, FLASH_PGRM_FLR,
-  *         FLASH_WRPRT_FLR, FLASH_PRC_DONE or FLASH_TIMEOUT.
-  */
-FLASH_Status FLASH_SlibMainEnable(uint32_t Psw, uint16_t StartPage, uint16_t DataStartPage, uint16_t EndPage)
-{
-  uint32_t SlibRange;
-  FLASH_Status Status = FLASH_PRC_DONE;
-
-  assert_param(IS_SLIB_DISABLE());
-  assert_param((Psw != 0xFFFFFFFF)&&(Psw != 0x00000000));
-  assert_param((StartPage >= 1)&&(StartPage <= 511)); 
-  assert_param((DataStartPage >= 1)&&(DataStartPage <= 511));
-  assert_param((EndPage >= 1)&&(EndPage <= 511));
-
-  /* Wait for last process to be completed */
-  Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-  /*check param limits*/
-  if((StartPage>=DataStartPage) || ((DataStartPage>EndPage)&&(DataStartPage!=0x7FF)) || (StartPage>EndPage))
-    return Status;
-  
-  SlibRange = ((uint32_t)DataStartPage<<11&FLASH_SLIB_DATA_START_PAGE) | ((uint32_t)EndPage<<22&FLASH_SLIB_END_PAGE) | ((uint32_t)StartPage&FLASH_SLIB_START_PAGE);
-
-  if(Status == FLASH_PRC_DONE)
-  {
-      /* Unlock SLIB CFG register */
-      FLASH->SLIB_KEYR = SLIB_UNLOCK_KEY;
-
-      /* Configure SLIB, set PSW and RANGE */
-      FLASH->SLIB_SET_PSW = Psw;
-      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-
-      FLASH->SLIB_SET_RANGE = SlibRange;
-      Status = FLASH_WaitForProcess(PRGM_TIMEOUT);
-  }
-  return Status;
-}
-#endif
-
-/**
-  * @brief  Disable SLIB when SLIB enabled
-  * @note   This function can be used for all AT32F4xx devices.
-  * @param  Psw: SLIB Password
-  * @retval SUCCESS or ERROR
-  */
-uint32_t FLASH_SlibDisable(uint32_t Psw)
-{
-  FLASH_Status Status = FLASH_PRC_DONE;
-
-  assert_param(!IS_SLIB_DISABLE());
-
-  /* Write Password to disable SLIB */
-  FLASH->SLIB_PSW = Psw;
-  Status = FLASH_WaitForProcess(ERS_TIMEOUT);
-  
-  if(Status == FLASH_PRC_DONE)
-  {
-    if(FLASH->SLIB_PSW_STS & FLASH_SLIB_PSWSTS_PSW_OK)
-      return SUCCESS;
-    else
-      return ERROR;
-  }
-  
-  return ERROR;
-}
-
-#if !defined (AT32F415xx) && !defined (AT32F421xx)
-/**
- * @brief  Get the value of current remaining SLIB CFG count (range: 256~0)
- * @note   This function can not be used for AT32F415 and AT32F421 devices.
- * @param  None 
- * @retval uint32_t
- */
-uint32_t FLASH_GetSlibCurCnt(void)
-{
-  return ((FLASH->SLIB_PSW_STS & FLASH_SLIB_CNT) >> 16);
-}
-#endif
-
-/**
-  * @brief  Get the SLIB state
-  * @note   This function can be used for all AT32F4xx devices.
-  * @param  None
-  * @retval ENABLE or DISABLE
-  */
-uint8_t FLASH_GetSlibState(void)
-{
-  if(FLASH->SLIB_CDR0&FLASH_SLIB_CDR0_SLIB_EN)
-    return ENABLE;
-  else
-    return DISABLE;
-}
-
-/**
- * @brief  Get the start page of SLIB
- * @note   This function can be used for all AT32F4xx devices
- * @param  None
- * @retval uint16_t
- */
-uint16_t FLASH_GetSlibStartPage(void)
-{
-  return (uint16_t)((FLASH->SLIB_CDR1&FLASH_SLIB_SET_START_PAGE)>>0);
-}
-
-/**
- * @brief  Get the data start page of SLIB
- * @note   This function can be used for all AT32F4xx devices
- * @param  None
- * @retval uint16_t
- */
-uint16_t FLASH_GetSlibDataStartPage(void)
-{
-  return (uint16_t)((FLASH->SLIB_CDR1&FLASH_SLIB_SET_DATA_START_PAGE)>>11);
-}
 
 /**
  * @brief  Get the instruction start page of SLIB
@@ -2010,7 +1887,7 @@ uint16_t FLASH_GetSlibDataStartPage(void)
  */
 uint16_t FLASH_GetSlibInstrStartPage(void)
 {
-  return (uint16_t)((FLASH->SLIB_CDR1&FLASH_SLIB_SET_INSTR_START_PAGE)>>11);
+  return (uint16_t)((FLASH->SLIB_STS1&FLASH_SLIB_SET_INSTR_START_PAGE)>>11);
 }
 
 /**
@@ -2021,7 +1898,7 @@ uint16_t FLASH_GetSlibInstrStartPage(void)
  */
 uint16_t FLASH_GetSlibEndPage(void)
 {
-  return (uint16_t)((FLASH->SLIB_CDR1&FLASH_SLIB_SET_END_PAGE)>>22);
+  return (uint16_t)((FLASH->SLIB_STS1&FLASH_SLIB_SET_END_PAGE)>>22);
 }
 
 #if defined (AT32F415xx) || defined (AT32F421xx)
@@ -2039,7 +1916,7 @@ FLASH_Status FLASH_SYS_AP(void)
   assert_param(IS_SLIB_DISABLE());
   assert_param(IS_RDP_DISABLE());
 
-  if((FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_BOOT_DIS) == 0)
+  if((FLASH->SLIB_STS0 & FLASH_SLIB_STS0_BOOT_DIS) == 0)
   {
     FLASH->SLIB_KEYR = SLIB_UNLOCK_KEY;
     while((FLASH->SLIB_PSW_STS & FLASH_SLIB_UNLOCK) == 0);
@@ -2071,7 +1948,7 @@ FLASH_Status FLASH_SlibSysEnable(uint32_t Psw,uint8_t instr_start_page)
   while((FLASH->SLIB_PSW_STS & FLASH_SLIB_UNLOCK) == 0);
   
   /* make sure System Memory as AP mode */
-  if(FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_BOOT_DIS)
+  if(FLASH->SLIB_STS0 & FLASH_SLIB_STS0_BOOT_DIS)
   {
     FLASH->SYS_SLIB_SET = (instr_start_page<<16)+0x5AA5;
     tStatus = FLASH_WaitForProcess(PRGM_TIMEOUT);
@@ -2102,7 +1979,7 @@ FLASH_Status FLASH_SlibSysEnable(uint32_t Psw,uint8_t data_start_page)
   while((FLASH->SLIB_PSW_STS & FLASH_SLIB_UNLOCK) == 0);
   
   /* make sure System Memory as AP mode */
-  if(FLASH->SLIB_CDR0 & FLASH_SLIB_CDR0_BOOT_DIS)
+  if(FLASH->SLIB_STS0 & FLASH_SLIB_STS0_BOOT_DIS)
   {
     FLASH->SYS_SLIB_SET = (data_start_page<<16)+0x5AA5;
     tStatus = FLASH_WaitForProcess(PRGM_TIMEOUT);
@@ -2214,6 +2091,93 @@ void FLASH_OptionByteProtectDisable(void)
   tStatus = FLASH_WaitForProcess(ERS_TIMEOUT);
 }
 #endif /* AT32F415xx || AT32F421xx */
+/**
+  * @brief  Unlocks the FLASH Controller.
+  * @note   This function can be used for all at32f4xx devices.
+  *         - For AT32F4xx XL-Density devices this function unlocks Bank1 and Bank2.
+  *         - For all other devices it unlocks Bank1 and it is equivalent
+  *           to FLASH_UnlockBank1 function..
+  * @param  None
+  * @retval None
+  */
+void FLASH_Unlock(void)
+{
+  /* Authorize the FC of Bank1 Access */
+  FLASH->FCKEY = FLASH_KEY1;
+  FLASH->FCKEY = FLASH_KEY2;
+
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+  /* Authorize the FC of Bank2 Access */
+  FLASH->FCKEY2 = FLASH_KEY1;
+  FLASH->FCKEY2 = FLASH_KEY2;
+#endif
+}
+/**
+  * @brief  Unlocks the FLASH Bank1 Controller.
+  * @note   This function can be used for all at32f4xx devices.
+  *         - For AT32F4xx XL-Density devices this function unlocks Bank1.
+  *         - For all other devices it unlocks Bank1 and it is
+  *           equivalent to FLASH_Unlock function.
+  * @param  None
+  * @retval None
+  */
+void FLASH_UnlockBank1(void)
+{
+  /* Authorize the FC of Bank1 Access */
+  FLASH->FCKEY = FLASH_KEY1;
+  FLASH->FCKEY = FLASH_KEY2;
+}
+
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+/**
+  * @brief  Unlocks the FLASH Bank2 Controller.
+  * @note   This function can be used only for AT32F4xx XL-Density devices.
+  * @param  None
+  * @retval None
+  */
+void FLASH_UnlockBank2(void)
+{
+  /* Authorize the FC of Bank2 Access */
+  FLASH->FCKEY2 = FLASH_KEY1;
+  FLASH->FCKEY2 = FLASH_KEY2;
+
+}
+#endif
+
+#if defined(AT32F403xx) || defined(AT32F413xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+/**
+  * @brief  Unlocks the FLASH Bank3 Controller for external flash.
+  * @note   This function can not be used for AT32F415 and AT32F421 devices.
+  * @param  None
+  * @retval None
+  */
+void FLASH_UnlockBank3(void)
+{
+  /* Authorize the FC of Bank3 Access */
+  FLASH->FCKEY3 = FLASH_KEY1;
+  FLASH->FCKEY3 = FLASH_KEY2;
+}
+#endif
+
+/**
+  * @brief  Locks the FLASH Controller.
+  * @note   This function can be used for all at32f4xx devices.
+  *         - For AT32F4xx XL-Density devices this function Locks Bank1 and Bank2.
+  *         - For all other devices it Locks Bank1 and it is equivalent
+  *           to FLASH_LockBank1 function.
+  * @param  None
+  * @retval None
+  */
+void FLASH_Lock(void)
+{
+  /* Set the Lock Bit to lock the FC and the CTRL of  Bank1 */
+  FLASH->CTRL |= CTRL_LCK_Set;
+
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
+  /* Set the Lock Bit to lock the FC and the CTRL of  Bank2 */
+  FLASH->CTRL2 |= CTRL_LCK_Set;
+#endif
+}
 
 /**
   * @}

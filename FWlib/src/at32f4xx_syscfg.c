@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_syscfg.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx syscfg source file
   **************************************************************************
   */
@@ -146,6 +146,29 @@ void SYSCFG_IRTMRConfig(uint32_t IRTMR_Mode,uint32_t IR_Pol)
   assert_param(IS_SYSCFG_IRTMR_POL(IR_Pol));
   
   SYSCFG->CFGR1 |= (uint32_t)((uint32_t)IRTMR_Mode | (uint32_t)IR_Pol);
+}
+
+/**
+  * @brief  PA11 and PA12 remapping bit only for small packages (28 and 20 pins).
+  * @param  NewState: new state of GPIO(PA11 and PA12) remapping. 
+  *         This parameter can be: ENABLE or DISABLE.
+  * @retval None
+  */
+void SYSCFG_GPIORemapConfig(FunctionalState NewState)
+{
+  /* Check the parameters */
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
+
+  if (NewState != DISABLE)
+  {
+    /* Remap GPIO */
+    SYSCFG->CFGR1 |= (uint32_t)(SYSCFG_GPIORemap_PA11_PA12);
+  }
+  else
+  {
+    /* use the default GPIO */
+    SYSCFG->CFGR1 &= (uint32_t)(~(SYSCFG_GPIORemap_PA11_PA12));
+  }
 }
 
 /**

@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_rtc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx RTC header file
   **************************************************************************
   */
@@ -87,21 +87,22 @@ extern "C" {
 /** @defgroup RTC_Exported_Functions
   * @{
   */
-
+FlagStatus RTC_GetFlagStatus(uint16_t RTC_FLAG);
+void RTC_ClearFlag(uint16_t RTC_FLAG);
+ITStatus RTC_GetINTStatus(uint16_t RTC_INT);
+uint32_t  RTC_GetDivider(void);
+void RTC_WaitForLastTask(void);
+void RTC_WaitForSynchro(void);
+void RTC_ClearINTPendingBit(uint16_t RTC_INT);
+void RTC_SetCounter(uint32_t CounterValue);
+void RTC_SetDIV(uint32_t PrescalerValue);
+void RTC_SetAlarmValue(uint32_t AlarmValue);
 void RTC_INTConfig(uint16_t RTC_INT, FunctionalState NewState);
 void RTC_EnterConfigMode(void);
 void RTC_ExitConfigMode(void);
 uint32_t  RTC_GetCounter(void);
-void RTC_SetCounter(uint32_t CounterValue);
-void RTC_SetDIV(uint32_t PrescalerValue);
-void RTC_SetAlarmValue(uint32_t AlarmValue);
-uint32_t  RTC_GetDivider(void);
-void RTC_WaitForLastTask(void);
-void RTC_WaitForSynchro(void);
-FlagStatus RTC_GetFlagStatus(uint16_t RTC_FLAG);
-void RTC_ClearFlag(uint16_t RTC_FLAG);
-ITStatus RTC_GetINTStatus(uint16_t RTC_INT);
-void RTC_ClearINTPendingBit(uint16_t RTC_INT);
+
+
 
 #ifdef __cplusplus
 }

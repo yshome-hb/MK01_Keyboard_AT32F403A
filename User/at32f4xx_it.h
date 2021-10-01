@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * File   : Templates/at32f4xx_it.h 
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : Main Interrupt Service Routines.
   *          This file provides template for all exceptions handler and peripherals
   *          interrupt service routine.

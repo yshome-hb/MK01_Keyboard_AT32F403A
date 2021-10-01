@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_crc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx CRC header file
   **************************************************************************
   */
@@ -54,13 +54,13 @@ extern "C" {
 /** @defgroup CRC_Exported_Functions
   * @{
   */
-
+void CRC_SetIDTReg(uint8_t IDValue);
+uint8_t CRC_GetIDTReg(void);
 void CRC_ResetDT(void);
 uint32_t CRC_CalculateCRC(uint32_t Data);
 uint32_t CRC_CalculateBlkCRC(uint32_t pBuffer[], uint32_t BufferLength);
 uint32_t CRC_GetCRC(void);
-void CRC_SetIDTReg(uint8_t IDValue);
-uint8_t CRC_GetIDTReg(void);
+
 
 #ifdef __cplusplus
 }

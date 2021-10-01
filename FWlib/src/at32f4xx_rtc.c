@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_rtc.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx RTC source file
   **************************************************************************
   */
@@ -67,6 +67,102 @@
 /** @defgroup RTC_Private_Functions
   * @{
   */
+/**
+  * @brief  Checks whether the specified RTC flag is set or not.
+  * @param  RTC_FLAG: specifies the flag to check.
+  *   This parameter can be one the following values:
+  *     @arg RTC_FLAG_RTF: RTC Operation OFF flag
+  *     @arg RTC_FLAG_RSYNF: Registers Synchronized flag
+  *     @arg RTC_FLAG_OV: Overflow flag
+  *     @arg RTC_FLAG_ALA: Alarm flag
+  *     @arg RTC_FLAG_PACE: Second flag
+  * @retval The new state of RTC_FLAG (SET or RESET).
+  */
+FlagStatus RTC_GetFlagStatus(uint16_t RTC_FLAG)
+{
+  FlagStatus bitstatus = RESET;
+
+  /* Check the parameters */
+  assert_param(IS_RTC_GET_FLAG(RTC_FLAG));
+
+  if ((RTC->CTRLL & RTC_FLAG) != (uint16_t)RESET)
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the RTC's pending flags.
+  * @param  RTC_FLAG: specifies the flag to clear.
+  *   This parameter can be any combination of the following values:
+  *     @arg RTC_FLAG_RSYNF: Registers Synchronized flag. This flag is cleared only after
+  *                        an APB reset or an APB Clock stop.
+  *     @arg RTC_FLAG_OV: Overflow flag
+  *     @arg RTC_FLAG_ALA: Alarm flag
+  *     @arg RTC_FLAG_PACE: Second flag
+  * @retval None
+  */
+void RTC_ClearFlag(uint16_t RTC_FLAG)
+{
+  /* Check the parameters */
+  assert_param(IS_RTC_CLEAR_FLAG(RTC_FLAG));
+
+  /* Clear the corresponding RTC flag */
+  RTC->CTRLL &= (uint16_t)~RTC_FLAG;
+}
+
+/**
+  * @brief  Checks whether the specified RTC interrupt has occurred or not.
+  * @param  RTC_INT: specifies the RTC interrupts sources to check.
+  *   This parameter can be one of the following values:
+  *     @arg RTC_INT_OV: Overflow interrupt
+  *     @arg RTC_INT_ALA: Alarm interrupt
+  *     @arg RTC_INT_PACE: Second interrupt
+  * @retval The new state of the RTC_INT (SET or RESET).
+  */
+ITStatus RTC_GetINTStatus(uint16_t RTC_INT)
+{
+  ITStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_RTC_GET_INT(RTC_INT));
+
+  bitstatus = (ITStatus)(RTC->CTRLL & RTC_INT);
+
+  if (((RTC->CTRLH & RTC_INT) != (uint16_t)RESET) && (bitstatus != (uint16_t)RESET))
+  {
+    bitstatus = SET;
+  }
+  else
+  {
+    bitstatus = RESET;
+  }
+
+  return bitstatus;
+}
+
+/**
+  * @brief  Clears the RTC's interrupt pending bits.
+  * @param  RTC_INT: specifies the interrupt pending bit to clear.
+  *   This parameter can be any combination of the following values:
+  *     @arg RTC_INT_OV: Overflow interrupt
+  *     @arg RTC_INT_ALA: Alarm interrupt
+  *     @arg RTC_INT_PACE: Second interrupt
+  * @retval None
+  */
+void RTC_ClearINTPendingBit(uint16_t RTC_INT)
+{
+  /* Check the parameters */
+  assert_param(IS_RTC_INT(RTC_INT));
+
+  /* Clear the corresponding RTC pending bit */
+  RTC->CTRLL &= (uint16_t)~RTC_INT;
+}
 
 /**
   * @brief  Enables or disables the specified RTC interrupts.
@@ -93,40 +189,6 @@ void RTC_INTConfig(uint16_t RTC_INT, FunctionalState NewState)
   {
     RTC->CTRLH &= (uint16_t)~RTC_INT;
   }
-}
-
-/**
-  * @brief  Enters the RTC configuration mode.
-  * @param  None
-  * @retval None
-  */
-void RTC_EnterConfigMode(void)
-{
-  /* Set the CNF flag to enter in the Configuration Mode */
-  RTC->CTRLL |= RTC_CTRLL_CMF;
-}
-
-/**
-  * @brief  Exits from the RTC configuration mode.
-  * @param  None
-  * @retval None
-  */
-void RTC_ExitConfigMode(void)
-{
-  /* Reset the CNF flag to exit from the Configuration Mode */
-  RTC->CTRLL &= (uint16_t)~((uint16_t)RTC_CTRLL_CMF);
-}
-
-/**
-  * @brief  Gets the RTC counter value.
-  * @param  None
-  * @retval RTC counter value.
-  */
-uint32_t RTC_GetCounter(void)
-{
-  uint16_t tmp = 0;
-  tmp = RTC->CNTL;
-  return (((uint32_t)RTC->CNTH << 16 ) | tmp) ;
 }
 
 /**
@@ -224,100 +286,37 @@ void RTC_WaitForSynchro(void)
 }
 
 /**
-  * @brief  Checks whether the specified RTC flag is set or not.
-  * @param  RTC_FLAG: specifies the flag to check.
-  *   This parameter can be one the following values:
-  *     @arg RTC_FLAG_RTF: RTC Operation OFF flag
-  *     @arg RTC_FLAG_RSYNF: Registers Synchronized flag
-  *     @arg RTC_FLAG_OV: Overflow flag
-  *     @arg RTC_FLAG_ALA: Alarm flag
-  *     @arg RTC_FLAG_PACE: Second flag
-  * @retval The new state of RTC_FLAG (SET or RESET).
-  */
-FlagStatus RTC_GetFlagStatus(uint16_t RTC_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-
-  /* Check the parameters */
-  assert_param(IS_RTC_GET_FLAG(RTC_FLAG));
-
-  if ((RTC->CTRLL & RTC_FLAG) != (uint16_t)RESET)
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the RTC's pending flags.
-  * @param  RTC_FLAG: specifies the flag to clear.
-  *   This parameter can be any combination of the following values:
-  *     @arg RTC_FLAG_RSYNF: Registers Synchronized flag. This flag is cleared only after
-  *                        an APB reset or an APB Clock stop.
-  *     @arg RTC_FLAG_OV: Overflow flag
-  *     @arg RTC_FLAG_ALA: Alarm flag
-  *     @arg RTC_FLAG_PACE: Second flag
+  * @brief  Enters the RTC configuration mode.
+  * @param  None
   * @retval None
   */
-void RTC_ClearFlag(uint16_t RTC_FLAG)
+void RTC_EnterConfigMode(void)
 {
-  /* Check the parameters */
-  assert_param(IS_RTC_CLEAR_FLAG(RTC_FLAG));
-
-  /* Clear the corresponding RTC flag */
-  RTC->CTRLL &= (uint16_t)~RTC_FLAG;
+  /* Set the CNF flag to enter in the Configuration Mode */
+  RTC->CTRLL |= RTC_CTRLL_CMF;
 }
 
 /**
-  * @brief  Checks whether the specified RTC interrupt has occurred or not.
-  * @param  RTC_INT: specifies the RTC interrupts sources to check.
-  *   This parameter can be one of the following values:
-  *     @arg RTC_INT_OV: Overflow interrupt
-  *     @arg RTC_INT_ALA: Alarm interrupt
-  *     @arg RTC_INT_PACE: Second interrupt
-  * @retval The new state of the RTC_INT (SET or RESET).
-  */
-ITStatus RTC_GetINTStatus(uint16_t RTC_INT)
-{
-  ITStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_RTC_GET_INT(RTC_INT));
-
-  bitstatus = (ITStatus)(RTC->CTRLL & RTC_INT);
-
-  if (((RTC->CTRLH & RTC_INT) != (uint16_t)RESET) && (bitstatus != (uint16_t)RESET))
-  {
-    bitstatus = SET;
-  }
-  else
-  {
-    bitstatus = RESET;
-  }
-
-  return bitstatus;
-}
-
-/**
-  * @brief  Clears the RTC's interrupt pending bits.
-  * @param  RTC_INT: specifies the interrupt pending bit to clear.
-  *   This parameter can be any combination of the following values:
-  *     @arg RTC_INT_OV: Overflow interrupt
-  *     @arg RTC_INT_ALA: Alarm interrupt
-  *     @arg RTC_INT_PACE: Second interrupt
+  * @brief  Exits from the RTC configuration mode.
+  * @param  None
   * @retval None
   */
-void RTC_ClearINTPendingBit(uint16_t RTC_INT)
+void RTC_ExitConfigMode(void)
 {
-  /* Check the parameters */
-  assert_param(IS_RTC_INT(RTC_INT));
+  /* Reset the CNF flag to exit from the Configuration Mode */
+  RTC->CTRLL &= (uint16_t)~((uint16_t)RTC_CTRLL_CMF);
+}
 
-  /* Clear the corresponding RTC pending bit */
-  RTC->CTRLL &= (uint16_t)~RTC_INT;
+/**
+  * @brief  Gets the RTC counter value.
+  * @param  None
+  * @retval RTC counter value.
+  */
+uint32_t RTC_GetCounter(void)
+{
+  uint16_t tmp = 0;
+  tmp = RTC->CNTL;
+  return (((uint32_t)RTC->CNTH << 16 ) | tmp) ;
 }
 
 /**

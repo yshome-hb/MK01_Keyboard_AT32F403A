@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_exti.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx EXTI header file
   **************************************************************************
   */
@@ -178,15 +178,14 @@ typedef struct
 /** @defgroup EXTI_Exported_Functions
   * @{
   */
-
-void EXTI_Reset(void);
-void EXTI_Init(EXTI_InitType* EXTI_InitStruct);
-void EXTI_StructInit(EXTI_InitType* EXTI_InitStruct);
-void EXTI_GenerateSWInt(uint32_t EXTI_Line);
-FlagStatus EXTI_GetFlagStatus(uint32_t EXTI_Line);
 void EXTI_ClearFlag(uint32_t EXTI_Line);
 ITStatus EXTI_GetIntStatus(uint32_t EXTI_Line);
 void EXTI_ClearIntPendingBit(uint32_t EXTI_Line);
+void EXTI_GenerateSWInt(uint32_t EXTI_Line);
+FlagStatus EXTI_GetFlagStatus(uint32_t EXTI_Line);
+void EXTI_Reset(void);
+void EXTI_Init(EXTI_InitType* EXTI_InitStruct);
+void EXTI_StructInit(EXTI_InitType* EXTI_InitStruct);
 
 #ifdef __cplusplus
 }

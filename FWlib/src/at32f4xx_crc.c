@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_crc.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx CRC source file
   **************************************************************************
   */
@@ -63,28 +63,24 @@
 /** @defgroup CRC_Private_Functions
   * @{
   */
-
 /**
-  * @brief  Resets the CRC Data register (DR).
-  * @param  None
+  * @brief  Stores a 8-bit data in the Independent Data(ID) register.
+  * @param  IDValue: 8-bit value to be stored in the ID register
   * @retval None
   */
-void CRC_ResetDT(void)
+void CRC_SetIDTReg(uint8_t IDValue)
 {
-  /* Reset CRC generator */
-  CRC->CTRL = CRC_CTRL_RST;
+  CRC->IDT = IDValue;
 }
 
 /**
-  * @brief  Computes the 32-bit CRC of a given data word(32-bit).
-  * @param  Data: data word(32-bit) to compute its CRC
-  * @retval 32-bit CRC
+  * @brief  Returns the 8-bit data stored in the Independent Data(ID) register
+  * @param  None
+  * @retval 8-bit value of the ID register
   */
-uint32_t CRC_CalculateCRC(uint32_t Data)
+uint8_t CRC_GetIDTReg(void)
 {
-  CRC->DT = Data;
-
-  return (CRC->DT);
+  return (CRC->IDT);
 }
 
 /**
@@ -116,24 +112,28 @@ uint32_t CRC_GetCRC(void)
 }
 
 /**
-  * @brief  Stores a 8-bit data in the Independent Data(ID) register.
-  * @param  IDValue: 8-bit value to be stored in the ID register
+  * @brief  Resets the CRC Data register (DR).
+  * @param  None
   * @retval None
   */
-void CRC_SetIDTReg(uint8_t IDValue)
+void CRC_ResetDT(void)
 {
-  CRC->IDT = IDValue;
+  /* Reset CRC generator */
+  CRC->CTRL = CRC_CTRL_RST;
 }
 
 /**
-  * @brief  Returns the 8-bit data stored in the Independent Data(ID) register
-  * @param  None
-  * @retval 8-bit value of the ID register
+  * @brief  Computes the 32-bit CRC of a given data word(32-bit).
+  * @param  Data: data word(32-bit) to compute its CRC
+  * @retval 32-bit CRC
   */
-uint8_t CRC_GetIDTReg(void)
+uint32_t CRC_CalculateCRC(uint32_t Data)
 {
-  return (CRC->IDT);
+  CRC->DT = Data;
+
+  return (CRC->DT);
 }
+
 
 /**
   * @}

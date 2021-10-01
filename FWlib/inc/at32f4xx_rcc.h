@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_rcc.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx RCC header file
   **************************************************************************
   */
@@ -297,10 +297,17 @@ typedef struct
   */
 #define RCC_ERTCCLKSelection_LSE             ((uint32_t)0x00000100)
 #define RCC_ERTCCLKSelection_LSI             ((uint32_t)0x00000200)
+#ifdef AT32F421xx
+#define RCC_ERTCCLKSelection_HSE_Div32       ((uint32_t)0x00000300)
+#define IS_RCC_ERTCCLK_SEL(SEL)              (((SEL) == RCC_ERTCCLKSelection_LSE) || \
+                                              ((SEL)  == RCC_ERTCCLKSelection_LSI) || \
+                                              ((SEL)  == RCC_ERTCCLKSelection_HSE_Div32))
+#else
 #define RCC_ERTCCLKSelection_HSE_Div128      ((uint32_t)0x00000300)
 #define IS_RCC_ERTCCLK_SEL(SEL)              (((SEL) == RCC_ERTCCLKSelection_LSE) || \
                                               ((SEL)  == RCC_ERTCCLKSelection_LSI) || \
                                               ((SEL)  == RCC_ERTCCLKSelection_HSE_Div128))
+#endif
 #else
 /** @defgroup RTC_clock_source
   * @{
@@ -625,7 +632,6 @@ typedef struct
 #else
 #define IS_RCC_TWEAK_VALUE(VALUE)    ((VALUE) <= 0x3F)
 #endif
-#define IS_RCC_CALIB_VALUE(VALUE)    ((VALUE) <= 0xFF)
 
 /**
   * @}
@@ -722,7 +728,12 @@ typedef struct
 /** @defgroup RCC_Exported_Functions
   * @{
   */
-
+uint8_t RCC_GetSYSCLKSelction(void);
+void RCC_AHBCLKConfig(uint32_t RCC_SYSCLK_Div);
+void RCC_APB1CLKConfig(uint32_t RCC_HCLK_Div);
+void RCC_APB2CLKConfig(uint32_t RCC_HCLK_Div);
+void RCC_INTConfig(uint8_t RCC_INT, FunctionalState NewState);
+void RCC_ADCCLKConfig(uint32_t RCC_PCLK2_Div);
 void RCC_Reset(void);
 void RCC_HSEConfig(uint32_t RCC_HSE);
 ErrorStatus RCC_WaitForHSEStable(void);
@@ -732,12 +743,6 @@ void RCC_HSICmd(FunctionalState NewState);
 void RCC_PLLConfig(uint32_t RCC_PLLRefClk, uint32_t RCC_PLLMult, uint32_t RCC_PLLRange);
 void RCC_PLLCmd(FunctionalState NewState);
 void RCC_SYSCLKConfig(uint32_t RCC_SYSCLKSelect);
-uint8_t RCC_GetSYSCLKSelction(void);
-void RCC_AHBCLKConfig(uint32_t RCC_SYSCLK_Div);
-void RCC_APB1CLKConfig(uint32_t RCC_HCLK_Div);
-void RCC_APB2CLKConfig(uint32_t RCC_HCLK_Div);
-void RCC_INTConfig(uint8_t RCC_INT, FunctionalState NewState);
-void RCC_ADCCLKConfig(uint32_t RCC_PCLK2_Div);
 void RCC_LSEConfig(uint8_t RCC_LSE);
 void RCC_LSICmd(FunctionalState NewState);
 #if defined (AT32F415xx) || defined (AT32F421xx)

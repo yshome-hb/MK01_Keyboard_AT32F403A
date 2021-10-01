@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_adc.c
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx ADC source file
   **************************************************************************
   */
@@ -160,289 +160,188 @@
   * @{
   */
 
+
 /**
-  * @brief  Deinitializes the ADCx peripheral registers to their default reset values.
+  * @brief  Configures the analog watchdog guarded single channel
   * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  ADC_Channel: the ADC channel to configure for the analog watchdog.
+  *   This parameter can be one of the following values:
+  *     @arg ADC_Channel_0: ADC Channel0 selected
+  *     @arg ADC_Channel_1: ADC Channel1 selected
+  *     @arg ADC_Channel_2: ADC Channel2 selected
+  *     @arg ADC_Channel_3: ADC Channel3 selected
+  *     @arg ADC_Channel_4: ADC Channel4 selected
+  *     @arg ADC_Channel_5: ADC Channel5 selected
+  *     @arg ADC_Channel_6: ADC Channel6 selected
+  *     @arg ADC_Channel_7: ADC Channel7 selected
+  *     @arg ADC_Channel_8: ADC Channel8 selected
+  *     @arg ADC_Channel_9: ADC Channel9 selected
+  *     @arg ADC_Channel_10: ADC Channel10 selected
+  *     @arg ADC_Channel_11: ADC Channel11 selected
+  *     @arg ADC_Channel_12: ADC Channel12 selected
+  *     @arg ADC_Channel_13: ADC Channel13 selected
+  *     @arg ADC_Channel_14: ADC Channel14 selected
+  *     @arg ADC_Channel_15: ADC Channel15 selected
+  *     @arg ADC_Channel_16: ADC Channel16 selected
+  *     @arg ADC_Channel_17: ADC Channel17 selected
   * @retval None
   */
-void ADC_Reset(ADC_Type* ADCx)
+void ADC_AnalogWDGSingleChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel)
 {
+  uint32_t tmpreg = 0;
   /* Check the parameters */
   assert_param(IS_ADC_ALL_PERIPH(ADCx));
-
-  if (ADCx == ADC1)
-  {
-    /* Enable ADC1 reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC1, ENABLE);
-    /* Release ADC1 from reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC1, DISABLE);
-  }
-#if !defined (AT32F421xx) && !defined (AT32F415xx)
-  else if (ADCx == ADC2)
-  {
-    /* Enable ADC2 reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC2, ENABLE);
-    /* Release ADC2 from reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC2, DISABLE);
-  }
-#endif
-#if  defined (AT32F403xx) || defined (AT32F403Axx)
-  else if (ADCx == ADC3)
-  {
-    /* Enable ADC3 reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC3, ENABLE);
-    /* Release ADC3 from reset state */
-    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC3, DISABLE);
-  }
-#endif
+  assert_param(IS_ADC_CHANNEL(ADC_Channel));
+  /* Get the old register value */
+  tmpreg = ADCx->CTRL1;
+  /* Clear the Analog watchdog channel select bits */
+  tmpreg &= CTRL1_AWDCH_Rst;
+  /* Set the Analog watchdog channel */
+  tmpreg |= ADC_Channel;
+  /* Store the new register value */
+  ADCx->CTRL1 = tmpreg;
 }
 
 /**
-  * @brief  Initializes the ADCx peripheral according to the specified parameters
-  *         in the ADC_InitStruct.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_InitStruct: pointer to an ADC_InitType structure that contains
-  *         the configuration information for the specified ADC peripheral.
-  * @retval None
-  */
-void ADC_Init(ADC_Type* ADCx, ADC_InitType* ADC_InitStruct)
-{
-  uint32_t tmpreg1 = 0;
-  uint8_t tmpreg2 = 0;
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_ADC_MODE(ADC_InitStruct->ADC_Mode));
-  assert_param(IS_FUNCTIONAL_STATE(ADC_InitStruct->ADC_ScanMode));
-  assert_param(IS_FUNCTIONAL_STATE(ADC_InitStruct->ADC_ContinuousMode));
-  assert_param(IS_ADC_EXT_TRIG(ADC_InitStruct->ADC_ExternalTrig));
-  assert_param(IS_ADC_DATA_ALIGN(ADC_InitStruct->ADC_DataAlign));
-  assert_param(IS_ADC_REGULAR_LENGTH(ADC_InitStruct->ADC_NumOfChannel));
-
-  /*---------------------------- ADCx CTRL1 Configuration -----------------*/
-  /* Get the ADCx CTRL1 value */
-  tmpreg1 = ADCx->CTRL1;
-  /* Clear DUALMOD and SCAN bits */
-  tmpreg1 &= CTRL1_CLEAR_MASK;
-  /* Configure ADCx: Dual mode and scan conversion mode */
-  /* Set DUALMOD bits according to ADC_Mode value */
-  /* Set SCAN bit according to ADC_ScanConvMode value */
-  tmpreg1 |= (uint32_t)(ADC_InitStruct->ADC_Mode | ((uint32_t)ADC_InitStruct->ADC_ScanMode << 8));
-  /* Write to ADCx CTRL1 */
-  ADCx->CTRL1 = tmpreg1;
-
-  /*---------------------------- ADCx CTRL2 Configuration -----------------*/
-  /* Get the ADCx CTRL2 value */
-  tmpreg1 = ADCx->CTRL2;
-  /* Clear CONT, ALIGN and EXTSEL bits */
-  tmpreg1 &= CTRL2_CLEAR_Msk;
-  /* Configure ADCx: external trigger event and continuous conversion mode */
-  /* Set ALIGN bit according to ADC_DataAlign value */
-  /* Set EXTSEL bits according to ADC_ExternalTrigConv value */
-  /* Set CONT bit according to ADC_ContinuousConvMode value */
-  tmpreg1 |= (uint32_t)(ADC_InitStruct->ADC_DataAlign | ADC_InitStruct->ADC_ExternalTrig |
-                        ((uint32_t)ADC_InitStruct->ADC_ContinuousMode << 1));
-  /* Write to ADCx CTRL2 */
-  ADCx->CTRL2 = tmpreg1;
-
-  /*---------------------------- ADCx SQR1 Configuration -----------------*/
-  /* Get the ADCx SQR1 value */
-  tmpreg1 = ADCx->RSQ1;
-  /* Clear L bits */
-  tmpreg1 &= RSQ1_CLEAR_Msk;
-  /* Configure ADCx: regular channel sequence length */
-  /* Set L bits according to ADC_NbrOfChannel value */
-  tmpreg2 |= (uint8_t) (ADC_InitStruct->ADC_NumOfChannel - (uint8_t)1);
-  tmpreg1 |= (uint32_t)tmpreg2 << 20;
-  /* Write to ADCx SQR1 */
-  ADCx->RSQ1 = tmpreg1;
-}
-
-/**
-  * @brief  Fills each ADC_InitStruct member with its default value.
-  * @param  ADC_InitStruct : pointer to an ADC_InitType structure which will be initialized.
-  * @retval None
-  */
-void ADC_StructInit(ADC_InitType* ADC_InitStruct)
-{
-  /* Reset ADC init structure parameters values */
-  /* Initialize the ADC_Mode member */
-  ADC_InitStruct->ADC_Mode = ADC_Mode_Independent;
-  /* initialize the ADC_ScanConvMode member */
-  ADC_InitStruct->ADC_ScanMode = DISABLE;
-  /* Initialize the ADC_ContinuousConvMode member */
-  ADC_InitStruct->ADC_ContinuousMode = DISABLE;
-  /* Initialize the ADC_ExternalTrigConv member */
-  ADC_InitStruct->ADC_ExternalTrig = ADC_ExternalTrig_TMR1_CC1_ADC12;
-  /* Initialize the ADC_DataAlign member */
-  ADC_InitStruct->ADC_DataAlign = ADC_DataAlign_Right;
-  /* Initialize the ADC_NbrOfChannel member */
-  ADC_InitStruct->ADC_NumOfChannel = 1;
-}
-
-/**
-  * @brief  Enables or disables the specified ADC peripheral.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  NewState: new state of the ADCx peripheral.
+  * @brief  Enables or disables the temperature sensor and Vrefint channel.
+  * @param  NewState: new state of the temperature sensor.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void ADC_Ctrl(ADC_Type* ADCx, FunctionalState NewState)
+void ADC_TempSensorVrefintCtrl(FunctionalState NewState)
 {
   /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
   assert_param(IS_FUNCTIONAL_STATE(NewState));
 
   if (NewState != DISABLE)
   {
-    /* Set the ADON bit to wake up the ADC from power down mode */
-    ADCx->CTRL2 |= CTRL2_ADON_Set;
+    /* Enable the temperature sensor and Vrefint channel*/
+    ADC1->CTRL2 |= CTRL2_TSVREFE_Set;
   }
   else
   {
-    /* Disable the selected ADC peripheral */
-    ADCx->CTRL2 &= CTRL2_ADON_Rst;
+    /* Disable the temperature sensor and Vrefint channel*/
+    ADC1->CTRL2 &= CTRL2_TSVREFE_Rst;
   }
 }
 
 /**
-  * @brief  Enables or disables the specified ADC DMA request.
-  * @param  ADCx: where x can be 1 or 3 to select the ADC peripheral.
-  *   Note: ADC2 hasn't a DMA capability.
-  * @param  NewState: new state of the selected ADC DMA transfer.
-  *   This parameter can be: ENABLE or DISABLE.
+  * @brief  Checks whether the specified ADC flag is set or not.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  ADC_FLAG: specifies the flag to check.
+  *   This parameter can be one of the following values:
+  *     @arg ADC_FLAG_AWD: Analog watchdog flag
+  *     @arg ADC_FLAG_EC: End of conversion flag
+  *     @arg ADC_FLAG_JEC: End of injected group conversion flag
+  *     @arg ADC_FLAG_JSTR: Start of injected group conversion flag
+  *     @arg ADC_FLAG_RSTR: Start of regular group conversion flag
+  * @retval The new state of ADC_FLAG (SET or RESET).
+  */
+FlagStatus ADC_GetFlagStatus(ADC_Type* ADCx, uint8_t ADC_FLAG)
+{
+  FlagStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  assert_param(IS_ADC_GET_FLAG(ADC_FLAG));
+
+  /* Check the status of the specified ADC flag */
+  if ((ADCx->STS & ADC_FLAG) != (uint8_t)RESET)
+  {
+    /* ADC_FLAG is set */
+    bitstatus = SET;
+  }
+  else
+  {
+    /* ADC_FLAG is reset */
+    bitstatus = RESET;
+  }
+
+  /* Return the ADC_FLAG status */
+  return  bitstatus;
+}
+
+/**
+  * @brief  Clears the ADCx's pending flags.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  ADC_FLAG: specifies the flag to clear.
+  *   This parameter can be any combination of the following values:
+  *     @arg ADC_FLAG_AWD: Analog watchdog flag
+  *     @arg ADC_FLAG_EC: End of conversion flag
+  *     @arg ADC_FLAG_JEC: End of injected group conversion flag
+  *     @arg ADC_FLAG_JSTR: Start of injected group conversion flag
+  *     @arg ADC_FLAG_RSTR: Start of regular group conversion flag
   * @retval None
   */
-void ADC_DMACtrl(ADC_Type* ADCx, FunctionalState NewState)
+void ADC_ClearFlag(ADC_Type* ADCx, uint8_t ADC_FLAG)
 {
   /* Check the parameters */
-  assert_param(IS_ADC_DMA_PERIPH(ADCx));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the selected ADC DMA request */
-    ADCx->CTRL2 |= CTRL2_DMA_Set;
-  }
-  else
-  {
-    /* Disable the selected ADC DMA request */
-    ADCx->CTRL2 &= CTRL2_DMA_Rst;
-  }
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  assert_param(IS_ADC_CLEAR_FLAG(ADC_FLAG));
+  /* Clear the selected ADC flags */
+  ADCx->STS = ~(uint32_t)ADC_FLAG;
 }
 
 /**
-  * @brief  Enables or disables the specified ADC interrupts.
+  * @brief  Checks whether the specified ADC interrupt has occurred or not.
   * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_INT: specifies the ADC interrupt sources to be enabled or disabled.
+  * @param  ADC_INT: specifies the ADC interrupt source to check.
+  *   This parameter can be one of the following values:
+  *     @arg ADC_INT_EC: End of conversion interrupt mask
+  *     @arg ADC_INT_AWD: Analog watchdog interrupt mask
+  *     @arg ADC_INT_JEC: End of injected conversion interrupt mask
+  * @retval The new state of ADC_INT (SET or RESET).
+  */
+ITStatus ADC_GetINTStatus(ADC_Type* ADCx, uint16_t ADC_INT)
+{
+  ITStatus bitstatus = RESET;
+  uint32_t itmask = 0, enablestatus = 0;
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  assert_param(IS_ADC_GET_INT(ADC_INT));
+  /* Get the ADC INT index */
+  itmask = ADC_INT >> 8;
+  /* Get the ADC_INT enable bit status */
+  enablestatus = (ADCx->CTRL1 & (uint8_t)ADC_INT) ;
+
+  /* Check the status of the specified ADC interrupt */
+  if (((ADCx->STS & itmask) != (uint32_t)RESET) && enablestatus)
+  {
+    /* ADC_INT is set */
+    bitstatus = SET;
+  }
+  else
+  {
+    /* ADC_INT is reset */
+    bitstatus = RESET;
+  }
+
+  /* Return the ADC_INT status */
+  return  bitstatus;
+}
+
+/**
+  * @brief  Clears the ADCx's interrupt pending bits.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  ADC_INT: specifies the ADC interrupt pending bit to clear.
   *   This parameter can be any combination of the following values:
   *     @arg ADC_INT_EC: End of conversion interrupt mask
   *     @arg ADC_INT_AWD: Analog watchdog interrupt mask
   *     @arg ADC_INT_JEC: End of injected conversion interrupt mask
-  * @param  NewState: new state of the specified ADC interrupts.
-  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void ADC_INTConfig(ADC_Type* ADCx, uint16_t ADC_INT, FunctionalState NewState)
+void ADC_ClearINTPendingBit(ADC_Type* ADCx, uint16_t ADC_INT)
 {
   uint8_t itmask = 0;
   /* Check the parameters */
   assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_FUNCTIONAL_STATE(NewState));
   assert_param(IS_ADC_INT(ADC_INT));
   /* Get the ADC INT index */
-  itmask = (uint8_t)ADC_INT;
-
-  if (NewState != DISABLE)
-  {
-    /* Enable the selected ADC interrupts */
-    ADCx->CTRL1 |= itmask;
-  }
-  else
-  {
-    /* Disable the selected ADC interrupts */
-    ADCx->CTRL1 &= (~(uint32_t)itmask);
-  }
+  itmask = (uint8_t)(ADC_INT >> 8);
+  /* Clear the selected ADC interrupt pending bits */
+  ADCx->STS = ~(uint32_t)itmask;
 }
 
-/**
-  * @brief  Resets the selected ADC calibration registers.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @retval None
-  */
-void ADC_RstCalibration(ADC_Type* ADCx)
-{
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  /* Resets the selected ADC calibration registers */
-  ADCx->CTRL2 |= CTRL2_RSTCAL_Set;
-}
 
-/**
-  * @brief  Gets the selected ADC reset calibration registers status.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @retval The new state of ADC reset calibration registers (SET or RESET).
-  */
-FlagStatus ADC_GetResetCalibrationStatus(ADC_Type* ADCx)
-{
-  FlagStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-
-  /* Check the status of RSTCAL bit */
-  if ((ADCx->CTRL2 & CTRL2_RSTCAL_Set) != (uint32_t)RESET)
-  {
-    /* RSTCAL bit is set */
-    bitstatus = SET;
-  }
-  else
-  {
-    /* RSTCAL bit is reset */
-    bitstatus = RESET;
-  }
-
-  /* Return the RSTCAL bit status */
-  return  bitstatus;
-}
-
-/**
-  * @brief  Starts the selected ADC calibration process.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @retval None
-  */
-void ADC_StartCalibration(ADC_Type* ADCx)
-{
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  /* Enable the selected ADC calibration process */
-  ADCx->CTRL2 |= CTRL2_CAL_Set;
-}
-
-/**
-  * @brief  Gets the selected ADC calibration status.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @retval The new state of ADC calibration (SET or RESET).
-  */
-FlagStatus ADC_GetCalibrationStatus(ADC_Type* ADCx)
-{
-  FlagStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-
-  /* Check the status of CAL bit */
-  if ((ADCx->CTRL2 & CTRL2_CAL_Set) != (uint32_t)RESET)
-  {
-    /* CAL bit is set: calibration on going */
-    bitstatus = SET;
-  }
-  else
-  {
-    /* CAL bit is reset: end of calibration */
-    bitstatus = RESET;
-  }
-
-  /* Return the CAL bit status */
-  return  bitstatus;
-}
 
 /**
   * @brief  Enables or disables the selected ADC software start conversion .
@@ -1139,183 +1038,287 @@ void ADC_AnalogWDGThresholdsConfig(ADC_Type* ADCx, uint16_t HighThreshold,
 }
 
 /**
-  * @brief  Configures the analog watchdog guarded single channel
+  * @brief  Deinitializes the ADCx peripheral registers to their default reset values.
   * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_Channel: the ADC channel to configure for the analog watchdog.
-  *   This parameter can be one of the following values:
-  *     @arg ADC_Channel_0: ADC Channel0 selected
-  *     @arg ADC_Channel_1: ADC Channel1 selected
-  *     @arg ADC_Channel_2: ADC Channel2 selected
-  *     @arg ADC_Channel_3: ADC Channel3 selected
-  *     @arg ADC_Channel_4: ADC Channel4 selected
-  *     @arg ADC_Channel_5: ADC Channel5 selected
-  *     @arg ADC_Channel_6: ADC Channel6 selected
-  *     @arg ADC_Channel_7: ADC Channel7 selected
-  *     @arg ADC_Channel_8: ADC Channel8 selected
-  *     @arg ADC_Channel_9: ADC Channel9 selected
-  *     @arg ADC_Channel_10: ADC Channel10 selected
-  *     @arg ADC_Channel_11: ADC Channel11 selected
-  *     @arg ADC_Channel_12: ADC Channel12 selected
-  *     @arg ADC_Channel_13: ADC Channel13 selected
-  *     @arg ADC_Channel_14: ADC Channel14 selected
-  *     @arg ADC_Channel_15: ADC Channel15 selected
-  *     @arg ADC_Channel_16: ADC Channel16 selected
-  *     @arg ADC_Channel_17: ADC Channel17 selected
   * @retval None
   */
-void ADC_AnalogWDGSingleChannelConfig(ADC_Type* ADCx, uint8_t ADC_Channel)
+void ADC_Reset(ADC_Type* ADCx)
 {
-  uint32_t tmpreg = 0;
   /* Check the parameters */
   assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_ADC_CHANNEL(ADC_Channel));
-  /* Get the old register value */
-  tmpreg = ADCx->CTRL1;
-  /* Clear the Analog watchdog channel select bits */
-  tmpreg &= CTRL1_AWDCH_Rst;
-  /* Set the Analog watchdog channel */
-  tmpreg |= ADC_Channel;
-  /* Store the new register value */
-  ADCx->CTRL1 = tmpreg;
+
+  if (ADCx == ADC1)
+  {
+    /* Enable ADC1 reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC1, ENABLE);
+    /* Release ADC1 from reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC1, DISABLE);
+  }
+#if !defined (AT32F421xx) && !defined (AT32F415xx)
+  else if (ADCx == ADC2)
+  {
+    /* Enable ADC2 reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC2, ENABLE);
+    /* Release ADC2 from reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC2, DISABLE);
+  }
+#endif
+#if  defined (AT32F403xx) || defined (AT32F403Axx)
+  else if (ADCx == ADC3)
+  {
+    /* Enable ADC3 reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC3, ENABLE);
+    /* Release ADC3 from reset state */
+    RCC_APB2PeriphResetCmd(RCC_APB2PERIPH_ADC3, DISABLE);
+  }
+#endif
 }
 
 /**
-  * @brief  Enables or disables the temperature sensor and Vrefint channel.
-  * @param  NewState: new state of the temperature sensor.
+  * @brief  Initializes the ADCx peripheral according to the specified parameters
+  *         in the ADC_InitStruct.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  ADC_InitStruct: pointer to an ADC_InitType structure that contains
+  *         the configuration information for the specified ADC peripheral.
+  * @retval None
+  */
+void ADC_Init(ADC_Type* ADCx, ADC_InitType* ADC_InitStruct)
+{
+  uint32_t tmpreg1 = 0;
+  uint8_t tmpreg2 = 0;
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  assert_param(IS_ADC_MODE(ADC_InitStruct->ADC_Mode));
+  assert_param(IS_FUNCTIONAL_STATE(ADC_InitStruct->ADC_ScanMode));
+  assert_param(IS_FUNCTIONAL_STATE(ADC_InitStruct->ADC_ContinuousMode));
+  assert_param(IS_ADC_EXT_TRIG(ADC_InitStruct->ADC_ExternalTrig));
+  assert_param(IS_ADC_DATA_ALIGN(ADC_InitStruct->ADC_DataAlign));
+  assert_param(IS_ADC_REGULAR_LENGTH(ADC_InitStruct->ADC_NumOfChannel));
+
+  /*---------------------------- ADCx CTRL1 Configuration -----------------*/
+  /* Get the ADCx CTRL1 value */
+  tmpreg1 = ADCx->CTRL1;
+  /* Clear DUALMOD and SCAN bits */
+  tmpreg1 &= CTRL1_CLEAR_MASK;
+  /* Configure ADCx: Dual mode and scan conversion mode */
+  /* Set DUALMOD bits according to ADC_Mode value */
+  /* Set SCAN bit according to ADC_ScanConvMode value */
+  tmpreg1 |= (uint32_t)(ADC_InitStruct->ADC_Mode | ((uint32_t)ADC_InitStruct->ADC_ScanMode << 8));
+  /* Write to ADCx CTRL1 */
+  ADCx->CTRL1 = tmpreg1;
+
+  /*---------------------------- ADCx CTRL2 Configuration -----------------*/
+  /* Get the ADCx CTRL2 value */
+  tmpreg1 = ADCx->CTRL2;
+  /* Clear CONT, ALIGN and EXTSEL bits */
+  tmpreg1 &= CTRL2_CLEAR_Msk;
+  /* Configure ADCx: external trigger event and continuous conversion mode */
+  /* Set ALIGN bit according to ADC_DataAlign value */
+  /* Set EXTSEL bits according to ADC_ExternalTrigConv value */
+  /* Set CONT bit according to ADC_ContinuousConvMode value */
+  tmpreg1 |= (uint32_t)(ADC_InitStruct->ADC_DataAlign | ADC_InitStruct->ADC_ExternalTrig |
+                        ((uint32_t)ADC_InitStruct->ADC_ContinuousMode << 1));
+  /* Write to ADCx CTRL2 */
+  ADCx->CTRL2 = tmpreg1;
+
+  /*---------------------------- ADCx SQR1 Configuration -----------------*/
+  /* Get the ADCx SQR1 value */
+  tmpreg1 = ADCx->RSQ1;
+  /* Clear L bits */
+  tmpreg1 &= RSQ1_CLEAR_Msk;
+  /* Configure ADCx: regular channel sequence length */
+  /* Set L bits according to ADC_NbrOfChannel value */
+  tmpreg2 |= (uint8_t) (ADC_InitStruct->ADC_NumOfChannel - (uint8_t)1);
+  tmpreg1 |= (uint32_t)tmpreg2 << 20;
+  /* Write to ADCx SQR1 */
+  ADCx->RSQ1 = tmpreg1;
+}
+
+/**
+  * @brief  Fills each ADC_InitStruct member with its default value.
+  * @param  ADC_InitStruct : pointer to an ADC_InitType structure which will be initialized.
+  * @retval None
+  */
+void ADC_StructInit(ADC_InitType* ADC_InitStruct)
+{
+  /* Reset ADC init structure parameters values */
+  /* Initialize the ADC_Mode member */
+  ADC_InitStruct->ADC_Mode = ADC_Mode_Independent;
+  /* initialize the ADC_ScanConvMode member */
+  ADC_InitStruct->ADC_ScanMode = DISABLE;
+  /* Initialize the ADC_ContinuousConvMode member */
+  ADC_InitStruct->ADC_ContinuousMode = DISABLE;
+  /* Initialize the ADC_ExternalTrigConv member */
+  ADC_InitStruct->ADC_ExternalTrig = ADC_ExternalTrig_TMR1_CC1_ADC12;
+  /* Initialize the ADC_DataAlign member */
+  ADC_InitStruct->ADC_DataAlign = ADC_DataAlign_Right;
+  /* Initialize the ADC_NbrOfChannel member */
+  ADC_InitStruct->ADC_NumOfChannel = 1;
+}
+
+/**
+  * @brief  Enables or disables the specified ADC peripheral.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @param  NewState: new state of the ADCx peripheral.
   *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void ADC_TempSensorVrefintCtrl(FunctionalState NewState)
+void ADC_Ctrl(ADC_Type* ADCx, FunctionalState NewState)
 {
   /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
   assert_param(IS_FUNCTIONAL_STATE(NewState));
 
   if (NewState != DISABLE)
   {
-    /* Enable the temperature sensor and Vrefint channel*/
-    ADC1->CTRL2 |= CTRL2_TSVREFE_Set;
+    /* Set the ADON bit to wake up the ADC from power down mode */
+    ADCx->CTRL2 |= CTRL2_ADON_Set;
   }
   else
   {
-    /* Disable the temperature sensor and Vrefint channel*/
-    ADC1->CTRL2 &= CTRL2_TSVREFE_Rst;
+    /* Disable the selected ADC peripheral */
+    ADCx->CTRL2 &= CTRL2_ADON_Rst;
   }
 }
 
 /**
-  * @brief  Checks whether the specified ADC flag is set or not.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_FLAG: specifies the flag to check.
-  *   This parameter can be one of the following values:
-  *     @arg ADC_FLAG_AWD: Analog watchdog flag
-  *     @arg ADC_FLAG_EC: End of conversion flag
-  *     @arg ADC_FLAG_JEC: End of injected group conversion flag
-  *     @arg ADC_FLAG_JSTR: Start of injected group conversion flag
-  *     @arg ADC_FLAG_RSTR: Start of regular group conversion flag
-  * @retval The new state of ADC_FLAG (SET or RESET).
-  */
-FlagStatus ADC_GetFlagStatus(ADC_Type* ADCx, uint8_t ADC_FLAG)
-{
-  FlagStatus bitstatus = RESET;
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_ADC_GET_FLAG(ADC_FLAG));
-
-  /* Check the status of the specified ADC flag */
-  if ((ADCx->STS & ADC_FLAG) != (uint8_t)RESET)
-  {
-    /* ADC_FLAG is set */
-    bitstatus = SET;
-  }
-  else
-  {
-    /* ADC_FLAG is reset */
-    bitstatus = RESET;
-  }
-
-  /* Return the ADC_FLAG status */
-  return  bitstatus;
-}
-
-/**
-  * @brief  Clears the ADCx's pending flags.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_FLAG: specifies the flag to clear.
-  *   This parameter can be any combination of the following values:
-  *     @arg ADC_FLAG_AWD: Analog watchdog flag
-  *     @arg ADC_FLAG_EC: End of conversion flag
-  *     @arg ADC_FLAG_JEC: End of injected group conversion flag
-  *     @arg ADC_FLAG_JSTR: Start of injected group conversion flag
-  *     @arg ADC_FLAG_RSTR: Start of regular group conversion flag
+  * @brief  Enables or disables the specified ADC DMA request.
+  * @param  ADCx: where x can be 1 or 3 to select the ADC peripheral.
+  *   Note: ADC2 hasn't a DMA capability.
+  * @param  NewState: new state of the selected ADC DMA transfer.
+  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void ADC_ClearFlag(ADC_Type* ADCx, uint8_t ADC_FLAG)
+void ADC_DMACtrl(ADC_Type* ADCx, FunctionalState NewState)
 {
   /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_ADC_CLEAR_FLAG(ADC_FLAG));
-  /* Clear the selected ADC flags */
-  ADCx->STS = ~(uint32_t)ADC_FLAG;
-}
+  assert_param(IS_ADC_DMA_PERIPH(ADCx));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-/**
-  * @brief  Checks whether the specified ADC interrupt has occurred or not.
-  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_INT: specifies the ADC interrupt source to check.
-  *   This parameter can be one of the following values:
-  *     @arg ADC_INT_EC: End of conversion interrupt mask
-  *     @arg ADC_INT_AWD: Analog watchdog interrupt mask
-  *     @arg ADC_INT_JEC: End of injected conversion interrupt mask
-  * @retval The new state of ADC_INT (SET or RESET).
-  */
-ITStatus ADC_GetINTStatus(ADC_Type* ADCx, uint16_t ADC_INT)
-{
-  ITStatus bitstatus = RESET;
-  uint32_t itmask = 0, enablestatus = 0;
-  /* Check the parameters */
-  assert_param(IS_ADC_ALL_PERIPH(ADCx));
-  assert_param(IS_ADC_GET_INT(ADC_INT));
-  /* Get the ADC INT index */
-  itmask = ADC_INT >> 8;
-  /* Get the ADC_INT enable bit status */
-  enablestatus = (ADCx->CTRL1 & (uint8_t)ADC_INT) ;
-
-  /* Check the status of the specified ADC interrupt */
-  if (((ADCx->STS & itmask) != (uint32_t)RESET) && enablestatus)
+  if (NewState != DISABLE)
   {
-    /* ADC_INT is set */
-    bitstatus = SET;
+    /* Enable the selected ADC DMA request */
+    ADCx->CTRL2 |= CTRL2_DMA_Set;
   }
   else
   {
-    /* ADC_INT is reset */
-    bitstatus = RESET;
+    /* Disable the selected ADC DMA request */
+    ADCx->CTRL2 &= CTRL2_DMA_Rst;
   }
-
-  /* Return the ADC_INT status */
-  return  bitstatus;
 }
 
 /**
-  * @brief  Clears the ADCx's interrupt pending bits.
+  * @brief  Enables or disables the specified ADC interrupts.
   * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
-  * @param  ADC_INT: specifies the ADC interrupt pending bit to clear.
+  * @param  ADC_INT: specifies the ADC interrupt sources to be enabled or disabled.
   *   This parameter can be any combination of the following values:
   *     @arg ADC_INT_EC: End of conversion interrupt mask
   *     @arg ADC_INT_AWD: Analog watchdog interrupt mask
   *     @arg ADC_INT_JEC: End of injected conversion interrupt mask
+  * @param  NewState: new state of the specified ADC interrupts.
+  *   This parameter can be: ENABLE or DISABLE.
   * @retval None
   */
-void ADC_ClearINTPendingBit(ADC_Type* ADCx, uint16_t ADC_INT)
+void ADC_INTConfig(ADC_Type* ADCx, uint16_t ADC_INT, FunctionalState NewState)
 {
   uint8_t itmask = 0;
   /* Check the parameters */
   assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  assert_param(IS_FUNCTIONAL_STATE(NewState));
   assert_param(IS_ADC_INT(ADC_INT));
   /* Get the ADC INT index */
-  itmask = (uint8_t)(ADC_INT >> 8);
-  /* Clear the selected ADC interrupt pending bits */
-  ADCx->STS = ~(uint32_t)itmask;
+  itmask = (uint8_t)ADC_INT;
+
+  if (NewState != DISABLE)
+  {
+    /* Enable the selected ADC interrupts */
+    ADCx->CTRL1 |= itmask;
+  }
+  else
+  {
+    /* Disable the selected ADC interrupts */
+    ADCx->CTRL1 &= (~(uint32_t)itmask);
+  }
+}
+
+/**
+  * @brief  Resets the selected ADC calibration registers.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @retval None
+  */
+void ADC_RstCalibration(ADC_Type* ADCx)
+{
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  /* Resets the selected ADC calibration registers */
+  ADCx->CTRL2 |= CTRL2_RSTCAL_Set;
+}
+
+/**
+  * @brief  Gets the selected ADC reset calibration registers status.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @retval The new state of ADC reset calibration registers (SET or RESET).
+  */
+FlagStatus ADC_GetResetCalibrationStatus(ADC_Type* ADCx)
+{
+  FlagStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+
+  /* Check the status of RSTCAL bit */
+  if ((ADCx->CTRL2 & CTRL2_RSTCAL_Set) != (uint32_t)RESET)
+  {
+    /* RSTCAL bit is set */
+    bitstatus = SET;
+  }
+  else
+  {
+    /* RSTCAL bit is reset */
+    bitstatus = RESET;
+  }
+
+  /* Return the RSTCAL bit status */
+  return  bitstatus;
+}
+
+/**
+  * @brief  Starts the selected ADC calibration process.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @retval None
+  */
+void ADC_StartCalibration(ADC_Type* ADCx)
+{
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+  /* Enable the selected ADC calibration process */
+  ADCx->CTRL2 |= CTRL2_CAL_Set;
+}
+
+/**
+  * @brief  Gets the selected ADC calibration status.
+  * @param  ADCx: where x can be 1, 2 or 3 to select the ADC peripheral.
+  * @retval The new state of ADC calibration (SET or RESET).
+  */
+FlagStatus ADC_GetCalibrationStatus(ADC_Type* ADCx)
+{
+  FlagStatus bitstatus = RESET;
+  /* Check the parameters */
+  assert_param(IS_ADC_ALL_PERIPH(ADCx));
+
+  /* Check the status of CAL bit */
+  if ((ADCx->CTRL2 & CTRL2_CAL_Set) != (uint32_t)RESET)
+  {
+    /* CAL bit is set: calibration on going */
+    bitstatus = SET;
+  }
+  else
+  {
+    /* CAL bit is reset: end of calibration */
+    bitstatus = RESET;
+  }
+
+  /* Return the CAL bit status */
+  return  bitstatus;
 }
 
 /**

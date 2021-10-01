@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_flash.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx FMC header file
   **************************************************************************
   */
@@ -50,8 +50,7 @@ typedef enum
 
 typedef enum
 {
-    E_BANK3_SEL_ESMT_SP=0,
-    E_BANK3_SEL_GENERAL_CFGQE,
+    E_BANK3_SEL_GENERAL_CFGQE=1,
     E_BANK3_SEL_GENERAL,
 }T_BANK3_SEL;
 
@@ -213,9 +212,7 @@ typedef enum
 #define UOB_RST_STDBY                       ((uint16_t)0x0000) /*!< Reset generated when entering in STANDBY */
 #define IS_UOB_STDBY_CFG(CFG)               (((CFG) == UOB_NO_RST_STDBY) || ((CFG) == UOB_RST_STDBY))
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /**
   * @}
   */
@@ -246,9 +243,7 @@ typedef enum
 
 
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 #define FLASH_INT_BANK2                     ((uint32_t)0x80000000)
 #define FLASH_INT_BANK2_MASK                (~FLASH_INT_BANK2)
 #define FLASH_INT_BANK2_FLR                 ((uint32_t)0x80000400)  /*!< FPEC BANK2 error interrupt source */
@@ -270,7 +265,7 @@ typedef enum
 #define FLASH_FLAG_PRCDN                    ((uint32_t)0x00000020)  /*!< FLASH End of Operation flag */
 #define FLASH_FLAG_PRGMFLR                  ((uint32_t)0x00000004)  /*!< FLASH Program error flag */
 #define FLASH_FLAG_WRPRTFLR                 ((uint32_t)0x00000010)  /*!< FLASH Write protected error flag */
-#define FLASH_FLAG_UOBFLR                   ((uint32_t)0x00000001)  /*!< FLASH Option Byte error flag */
+#define FLASH_FLAG_UOBFLR                   ((uint32_t)0x00000100)  /*!< FLASH Option Byte error flag */
 
 #define FLASH_FLAG_BNK1_BSY                 FLASH_FLAG_BSY          /*!< FLASH BANK1 Busy flag*/
 #define FLASH_FLAG_BNK1_PRCDN               FLASH_FLAG_PRCDN        /*!< FLASH BANK1 End of Operation flag */
@@ -284,9 +279,7 @@ typedef enum
 #define FLASH_FLAG_BNK3_WRPRTFLR            ((uint32_t)0x40000010)  /*!< FLASH BANK3 Write protected error flag */
 
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 #define FLASH_FLAG_BANK2                    ((uint32_t)0x80000000)
 #define FLASH_FLAG_BNK2_BSY                 ((uint32_t)0x80000001)  /*!< FLASH BANK2 Busy flag */
 #define FLASH_FLAG_BNK2_PRCDN               ((uint32_t)0x80000020)  /*!< FLASH BANK2 End of Operation flag */
@@ -379,9 +372,7 @@ FLASH_Status FLASH_EraseBank1AllPages(void);
 FLASH_Status FLASH_GetBank1Status(void);
 FLASH_Status FLASH_WaitForBank1Process(uint32_t Timeout);
 
-#if defined(AT32F403Cx_XL) || defined(AT32F403Rx_XL) || defined(AT32F403Vx_XL) || defined(AT32F403Zx_XL) || \
-    defined(AT32F403ACGU7) || defined(AT32F403ACGT7) || defined(AT32F403ARGT7) || defined(AT32F403AVGT7) || \
-    defined(AT32F407RGT7)  || defined(AT32F407VGT7)  || defined(AT32F407AVGT7)
+#if defined(AT32F403xx) || defined(AT32F403Axx) || defined(AT32F407xx)
 /*---- New Functions used only with at32f403_XL density devices -----*/
 void FLASH_UnlockBank2(void);
 void FLASH_LockBank2(void);

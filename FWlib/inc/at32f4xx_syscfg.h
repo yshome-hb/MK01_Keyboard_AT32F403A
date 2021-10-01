@@ -1,8 +1,8 @@
 /**
   **************************************************************************
   * File   : at32f4xx_syscfg.h
-  * Version: V1.2.8
-  * Date   : 2020-11-27
+  * Version: V1.3.2
+  * Date   : 2021-08-08
   * Brief  : at32f4xx SYSCFG header file
   **************************************************************************
   */
@@ -89,6 +89,15 @@
   * @}
   */
 
+/** @defgroup SYSCFG_PA11_PA12_Remap_Config 
+  * @{
+  */ 
+#define SYSCFG_GPIORemap_PA11_PA12  ((uint32_t)0x00000010)    /* PA11 and PA12 remapping bit for small packages (28 and 20 pins). */
+
+/**
+  * @}
+  */
+
 /** @defgroup SYSCFG_Memory_Remap_Config 
   * @{
   */ 
@@ -164,11 +173,13 @@ void SYSCFG_DMAChannelRemapConfig(uint32_t SYSCFG_DMARemap, FunctionalState NewS
 void SYSCFG_I2CFastModePlusConfig(uint32_t SYSCFG_I2CFastModePlus, FunctionalState NewState);
 void SYSCFG_EXTILineConfig(uint8_t EXTI_PortSourceGPIOx, uint8_t EXTI_PinSourcex);
 void SYSCFG_IRTMRConfig(uint32_t IRTMR_Mode,uint32_t IR_Pol);
+void SYSCFG_GPIORemapConfig(FunctionalState NewState);
+
+#endif /*__AT32F4XX_SYSCFG_H */
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*__AT32F4XX_SYSCFG_H */
 
 #endif /* AT32F421xx */
 
