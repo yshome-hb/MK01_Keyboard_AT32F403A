@@ -12,14 +12,18 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "at32f4xx_it.h"
-/** @addtogroup AT32F403A_StdPeriph_Templates
+#include "usb_istr.h"
+#include "usb_lib.h"
+#include "usb_pwr.h"
+/** @addtogroup AT32F413_StdPeriph_Examples
   * @{
   */
-
-/** @addtogroup GPIO_LED_Toggle
+extern  uint8_t usb_packet_sent ;
+extern vu32 bDeviceState;
+/** @addtogroup USB_Custom_HID
   * @{
-  */
-
+  */ 
+  
 /**
   * @brief  This function handles NMI exception.
   * @param  None
@@ -125,19 +129,59 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief  This function handles PPP interrupt request.
+  * @brief  This function handles USB High Priority or CAN TX interrupts
+  *         requests.
   * @param  None
   * @retval None
   */
-/*void PPP_IRQHandler(void)
+void USB_HP_CAN1_TX_IRQHandler(void)
+{}
+
+/**
+  * @brief  This function handles USB Low Priority or CAN RX0 interrupts
+  *         requests.
+  * @param  None
+  * @retval None
+  */
+void USB_LP_CAN1_RX0_IRQHandler (void)
 {
-}*/
+  USB_Istr();
+}   
+
+/**
+  * @brief  This function handles USB WakeUp interrupt request.
+  * @param  None
+  * @retval None
+  */
+void USBWakeUp_IRQHandler(void)
+{
+    EXTI_ClearIntPendingBit(EXTI_Line18);
+}
+
+/**
+  * @brief  This function handles ACC interrupt request.
+  * @param  None
+  * @retval None
+  */
+void ACC_IRQHandler(void)
+{
+  if(ACC_GetFlagStatus(ACC_FLAG_CALRDY) == SET)
+  {
+    /*Claer ACC Calibration ready flag*/
+    ACC_ClearFlag(ACC_FLAG_CALRDY);
+  }
+  if(ACC_GetFlagStatus(ACC_FLAG_RSLOST) == SET)
+  {
+    /*Claer ACC Reference Signal Lost flag*/
+    ACC_ClearFlag(ACC_FLAG_RSLOST);
+  }
+}
+
+/**
+  * @}
+  */ 
 
 /**
   * @}
   */
-
-/**
-  * @}
-  */
-
+  
