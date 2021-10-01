@@ -30,10 +30,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint32_t ProtocolValue;  ///the protocol value
-__IO uint8_t EXTI_Enable;
 __IO uint8_t Request = 0;
-uint8_t Report_Buf[27];  
-uint8_t idel_buf[2];
+uint8_t Report_Buf[27]; 
 /* -------------------------------------------------------------------------- */
 /*  Structures initializations */
 /* -------------------------------------------------------------------------- */

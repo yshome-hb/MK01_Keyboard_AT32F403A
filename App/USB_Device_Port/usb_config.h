@@ -21,11 +21,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported define -----------------------------------------------------------*/
-#define DOWN            1
-#define LEFT            2
-#define RIGHT           3
-#define UP              4
-#define CURSOR_STEP     40
 
 #define USB_FIFO_MAX     1024
 #define USBCLK_FROM_HSE  1
@@ -44,13 +39,11 @@ extern usb_usart_fifo usb_txfifo;
 extern usb_usart_fifo usb_rxfifo;
 
 /* Exported functions ------------------------------------------------------- */
-void Set_System(void);
+void USB_GPIO_init(void);
 void Set_USBClock(u8 Clk_Source);
-void GPIO_AINConfig(void);
 void Enter_LowPowerMode(void);
 void Leave_LowPowerMode(void);
 void USB_Interrupts_Config(void);
-void USB_Cable_Config (FunctionalState NewState);
 uint16_t CDC_Send_DATA (uint8_t *u8SendBuffer, uint16_t u16Sendlen);
 uint16_t CDC_Receive_DATA(uint8_t *u8RcvBuffer, uint16_t u16RecvLen);
 void Get_SerialNum(void);

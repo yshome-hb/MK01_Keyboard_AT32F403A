@@ -24,13 +24,10 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 extern uint8_t usb_packet_sent;
-extern uint8_t usb_packet_receive;
-extern uint8_t usb_Receive_Buffer[];
 extern uint16_t usb_Receive_length;
 
 uint8_t Receive_Buffer[64];
 extern  vu32 bDeviceState; 
-u8 usb_fifo[64] = {8,2,3,4,5,6,7,8,9,0};
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -191,7 +188,6 @@ void EP2_IN_Callback(void)
   */
 void SOF_Callback(void)
 {
-
 	if(bDeviceState == CONFIGURED)
 	{
 		if (usb_packet_sent == 1 && ( GetEPTxStatus(ENDP1) != EP_TX_VALID ))

@@ -23,11 +23,20 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+/*define usb pin*/
+#define USB_DP_PIN          GPIO_Pins_12
+#define USB_DM_PIN          GPIO_Pins_11
+
+#define USB_GPIO            GPIOA
+#if defined (AT32F421xx)
+#define USB_GPIO_RCC_CLK    RCC_AHBPERIPH_GPIOA
+#else
+#define USB_GPIO_RCC_CLK    RCC_APB2PERIPH_GPIOA
+#endif
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Extern variables ----------------------------------------------------------*/
-
-int ACC_C2_value=0;
 //#define ACC_CAL
 #define ACC_TRIM
 
@@ -36,17 +45,41 @@ usb_usart_fifo usb_rxfifo;
 
 
 uint8_t usb_packet_sent = 0;
-uint8_t usb_packet_receive = 0;
-uint8_t usb_Receive_Buffer[64];
 uint16_t usb_Receive_length;
 
-__IO uint8_t ADCSimValue=0;
 static void IntToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len);
 /* Extern variables ----------------------------------------------------------*/
  
 /* Extern variables ----------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/**
+  * @brief  USB GPIO initialize
+  *         USB use DP->PA12, DM->PA11    
+  * @param  None
+  * @retval None
+  */
+void USB_GPIO_init()
+{
+  GPIO_InitType GPIO_InitStructure;
+  /* Enable the USB Clock*/
+  RCC_APB2PeriphClockCmd(USB_GPIO_RCC_CLK, ENABLE);
+
+  /*Configure DP, DM pin as GPIO_Mode_OUT_PP*/
+  GPIO_StructInit(&GPIO_InitStructure);
+  GPIO_InitStructure.GPIO_Pins  = USB_DP_PIN | USB_DM_PIN;
+#if !defined (AT32F421xx)
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT_PP;
+#else
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_OutType = GPIO_OutType_PP;
+  GPIO_InitStructure.GPIO_Pull = GPIO_Pull_NOPULL;
+#endif
+  GPIO_InitStructure.GPIO_MaxSpeed = GPIO_MaxSpeed_50MHz;
+  GPIO_Init(USB_GPIO, &GPIO_InitStructure);
+  GPIO_ResetBits(USB_GPIO, USB_DP_PIN);
+}
+
 /**
   * @brief  Set USB Prescaler
   *         Set and cleared by software to generate 48MHz USB Clock 
@@ -87,6 +120,8 @@ void Set_USBClock(u8 Clk_Source)
   }
   else if(Clk_Source == USBCLK_FROM_HSI)
   {
+    int ACC_C2_value = 0;
+
     /*Open the ACC clock*/
     RCC_APB2PeriphClockCmd(RCC_APB2PERIPH_ACC, ENABLE);	
     
